@@ -64,3 +64,8 @@ var EliminatorMatchingCandidates = CandidateEliminator{
 		return "", nil
 	},
 }
+
+/* Rules to add
+** If cells in the a partition group out the same candidates. Example [1 4], [4 6], [1 6] or [1 4], [4 6], [1 4 7].
+** If a group only has values in a row or column, then remove those candidates from the other cells in that row or column.
+ */
