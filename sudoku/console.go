@@ -62,16 +62,20 @@ func (g *Game) StepThrough() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	fmt.Fprintln(writer, g.String())
+	var solve bool
 	for {
 		x, y, v, ok := g.SingleCadidate()
 		if !ok {
 			change, err := g.EliminateCandidates()
 			if err != nil {
-				fmt.Fprint(writer, color.New(color.FgRed).Sprintf("\nError: %v\n", err))
+				writer.Flush()
 				fmt.Fprintln(writer, g.String())
+				fmt.Fprint(writer, color.New(color.FgRed).Sprintf("\nError: %v\n", err))
 				break
 			}
-			fmt.Fprintln(writer, "Change: "+change)
+			if change != "" {
+				fmt.Fprintln(writer, "Change: "+change)
+			}
 			continue
 		}
 
@@ -79,23 +83,23 @@ func (g *Game) StepThrough() {
 		g.Board[y][x].Cell.Set(v)
 
 		if g.Won() {
-			fmt.Fprintln(writer, color.New(color.FgGreen).Sprint("Congratulations! We solved the Sudoku puzzle!"))
+			writer.Flush()
 			fmt.Fprintln(writer, g.String())
+			fmt.Fprintln(writer, color.New(color.FgGreen).Sprint("Congratulations! We solved the Sudoku puzzle!"))
 			break
 		}
 
-		fmt.Fprintln(writer, color.New(color.FgYellow).Sprint("Enter to continue"))
-		scanner.Scan()
-
-		fmt.Fprintln(writer, g.String())
+		if !solve {
+			fmt.Fprint(writer, color.New(color.FgYellow).Sprint("Enter to continue "))
+			scanner.Scan()
+			if t := scanner.Text(); t == "solve" || t == "s" {
+				solve = true
+			}
+			fmt.Printf("\033[1A\033[K") // Move cursor up and clear the line - this is needed to avoid the console being cluttered with "Enter to continue" messages
+			//fmt.Print("\033[H\033[2J") // Clear the console - needed because enter was breaking things
+		}
 		writer.Flush()
+		fmt.Fprintln(writer, g.String())
 	}
-
-	//for i := 0; i <= 100; i++ {
-	//	fmt.Fprintf(writer, "Downloading.. (%d/%d) GB\n", i, 100)
-	//	time.Sleep(time.Millisecond * 5)
-	//}
-
-	//fmt.Fprintln(writer, "Finished: Downloaded 100GB")
-	writer.Stop() // flush and stop rendering
+	writer.Stop()
 }

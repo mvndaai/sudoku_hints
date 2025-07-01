@@ -2,6 +2,7 @@ package sudoku
 
 import (
 	"fmt"
+	"math/rand/v2"
 )
 
 type (
@@ -14,6 +15,7 @@ type CandidateEliminator struct {
 	Description         string
 	PartitionEliminator PartitionEliminator
 	GameEliminator      GameEliminator
+	Simple              bool // Allow hiding simple eliminators from the UI
 }
 
 // Rules is a collection of rules that can be applied to a Sudoku game.
@@ -56,35 +58,38 @@ func (g *Game) GetSectionedCells() (rows [][]LocCell, cols [][]LocCell, groups [
 func (g *Game) EliminateCandidates() (change string, _ error) {
 	rows, cols, groups := g.GetSectionedCells()
 
+	if g.RandomEliminators {
+		// Shuffle the eliminators to randomize the order of elimination
+		rand.Shuffle(len(Eliminators), func(i, j int) { Eliminators[i], Eliminators[j] = Eliminators[j], Eliminators[i] })
+	}
 	for _, eliminator := range Eliminators {
-		//fmt.Println("Running eliminator:", eliminator.Name)
-
 		if eliminator.PartitionEliminator != nil {
-			for i, row := range rows {
-				change, err := eliminator.PartitionEliminator(row)
-				if err != nil {
-					return "", fmt.Errorf("(%s )row %d: %w", eliminator.Name, i, err)
-				}
-				if change != "" {
-					return fmt.Sprintf("(%s) row %d: %s", eliminator.Name, i, change), nil
-				}
+			partitions := []struct {
+				name  string
+				cells [][]LocCell
+			}{
+				{"rows", rows},
+				{"cols", cols},
+				{"groups", groups},
 			}
-			for i, col := range cols {
-				change, err := eliminator.PartitionEliminator(col)
-				if err != nil {
-					return "", fmt.Errorf("(%s) col %d: %w", eliminator.Name, i, err)
-				}
-				if change != "" {
-					return fmt.Sprintf("(%s) col %d: %s", eliminator.Name, i, change), nil
-				}
+
+			if g.RandomEliminators {
+				// Shuffle partitions to randomize the order of elimination
+				rand.Shuffle(len(partitions), func(i, j int) { partitions[i], partitions[j] = partitions[j], partitions[i] })
 			}
-			for i, group := range groups {
-				change, err := eliminator.PartitionEliminator(group)
-				if err != nil {
-					return "", fmt.Errorf("(%s) group %d: %w", eliminator.Name, i, err)
-				}
-				if change != "" {
-					return fmt.Sprintf("(%s) group %d: %s", eliminator.Name, i, change), nil
+
+			for _, ps := range partitions {
+				for i, cells := range ps.cells {
+					change, err := eliminator.PartitionEliminator(cells)
+					if err != nil {
+						return "", fmt.Errorf("(%s) %s %d: %w", eliminator.Name, ps.name, i, err)
+					}
+					if change != "" {
+						if g.HideSimple && eliminator.Simple {
+							return "", nil // Skip basic eliminators if HideBasic is true
+						}
+						return fmt.Sprintf("(%s) %s %d: %s", eliminator.Name, ps.name, i, change), nil
+					}
 				}
 			}
 		}

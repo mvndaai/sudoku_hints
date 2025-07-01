@@ -23,8 +23,10 @@ type (
 	}
 
 	Game struct {
-		Symbols []string
-		Board   [][]GroupedCell
+		Symbols           []string
+		Board             [][]GroupedCell
+		HideSimple        bool
+		RandomEliminators bool // If true, the eliminators will be run in a random order
 	}
 )
 
