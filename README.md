@@ -1,2 +1,2 @@
-# sudoku_hits
-Hints to solve sudoku
+# sudoku_hints
+Hints to solve Sudoku
