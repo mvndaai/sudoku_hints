@@ -2,7 +2,10 @@ module github.com/mvndaai/sudoku_hints
 
 go 1.24.0
 
-require github.com/fatih/color v1.18.0
+require (
+	github.com/fatih/color v1.18.0
+	github.com/gosuri/uilive v0.0.4
+)
 
 require (
 	github.com/mattn/go-colorable v0.1.13 // indirect

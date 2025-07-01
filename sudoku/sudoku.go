@@ -4,19 +4,22 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
-
-	"github.com/fatih/color"
 )
 
 type (
 	GroupedCell struct {
 		group int
-		Cell  Cell
+		Cell  *Cell
+	}
+
+	LocCell struct {
+		Loc  Loc
+		Cell *Cell
 	}
 
 	Cell struct {
 		value      string
-		candidates []string
+		Candidates []string
 	}
 
 	Game struct {
@@ -37,7 +40,7 @@ func (g *Game) Fill(cells [][]string, group map[Loc]int) error {
 				symbols[v] = struct{}{}
 			}
 			g.Board[y][x] = GroupedCell{
-				Cell:  Cell{value: v},
+				Cell:  &Cell{value: v},
 				group: group[Loc{X: x, Y: y}],
 			}
 		}
@@ -51,8 +54,13 @@ func (g *Game) Fill(cells [][]string, group map[Loc]int) error {
 	if len(g.Symbols) == 0 {
 		return fmt.Errorf("no symbols found in the provided cells")
 	}
-	if len(g.Symbols) != len(group) {
-		return fmt.Errorf("number of symbols (%d) does not match number of groups (%d)", len(g.Symbols), len(group))
+
+	groupVals := map[int]struct{}{}
+	for _, g := range group {
+		groupVals[g] = struct{}{}
+	}
+	if len(g.Symbols) != len(groupVals) {
+		return fmt.Errorf("number of symbols (%d) does not match number of group values (%d)", len(g.Symbols), len(groupVals))
 	}
 	slices.Sort(g.Symbols)
 
@@ -60,7 +68,7 @@ func (g *Game) Fill(cells [][]string, group map[Loc]int) error {
 	for y := range g.Board {
 		for x := range g.Board[y] {
 			if g.Board[y][x].Cell.value == "" {
-				g.Board[y][x].Cell.candidates = slices.Clone(g.Symbols)
+				g.Board[y][x].Cell.Candidates = slices.Clone(g.Symbols)
 			}
 		}
 	}
@@ -82,55 +90,56 @@ func (g *Game) FillBasic(cells [][]int) error {
 			strCells[y][x] = strconv.Itoa(v)
 		}
 	}
-	g.Fill(strCells, DefaultGropu9x9)
-	return nil
-}
-
-func (g *Game) String() string {
-	colors := []color.Attribute{color.FgYellow, color.FgBlue}
-
-	var r string
-	for y, row := range g.Board {
-		if y != 0 {
-			r += "\n"
-		}
-		for _, gc := range row {
-			c := color.New(colors[gc.group%2])
-
-			v := gc.Cell.value
-			if v == "" {
-				v = "⛝" // Use underscore for empty cells
-			}
-			r += c.Sprint(v) + " "
-		}
-	}
-	return r
+	return g.Fill(strCells, DefaultGropu9x9)
 }
 
 func (c *Cell) Set(v string) {
 	c.value = v
-	c.candidates = nil // Clear options since the cell is now filled
+	c.Candidates = nil // Clear options since the cell is now filled
 }
 
-func (c *Cell) RemoveCandiates(vs []string) {
+func (c *Cell) RemoveCandiates(vs []string) (removed []string) {
+	if c.value != "" {
+		return nil // Cell is already filled, nothing to remove
+	}
+
 	// Remove empty vs values
 	vs = slices.DeleteFunc(vs, func(v string) bool {
 		return v == ""
 	})
 
-	c.candidates = slices.DeleteFunc(c.candidates, func(c string) bool {
-		return slices.Contains(vs, c)
+	removed = []string{}
+	c.Candidates = slices.DeleteFunc(c.Candidates, func(c string) bool {
+		if slices.Contains(vs, c) {
+			removed = append(removed, c)
+			return true
+		}
+		return false
 	})
+
+	return removed
 }
 
 func (g *Game) SingleCadidate() (x, y int, v string, ok bool) {
 	for y := range g.Board {
 		for x := range g.Board[y] {
-			cell := &g.Board[y][x].Cell
-			if len(cell.candidates) == 1 {
-				return x, y, cell.candidates[0], true
+			cell := g.Board[y][x].Cell
+			if len(cell.Candidates) == 1 {
+				return x, y, cell.Candidates[0], true
 			}
 		}
 	}
 	return 0, 0, "", false
+}
+
+func (g *Game) Won() bool {
+	for y := range g.Board {
+		for x := range g.Board[y] {
+			cell := g.Board[y][x].Cell
+			if cell.value == "" {
+				return false // Found an empty cell
+			}
+		}
+	}
+	return true // All cells are filled and have no candidates
 }
