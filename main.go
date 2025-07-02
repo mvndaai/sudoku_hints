@@ -19,5 +19,5 @@ func main() {
 	//g.RandomEliminators = true // Randomize the order of eliminators TODO this causes errors.
 	g.RunSimpleFirst = true // Run simple eliminators first quietly
 	g.AutoSolve = true      // Automatically solve the game
-	g.StepThroughCosole()
+	g.StepThroughConsole()
 }

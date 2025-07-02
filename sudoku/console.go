@@ -74,7 +74,7 @@ type scanner interface {
 	Scan() bool
 }
 
-func (g *Game) StepThroughCosole() {
+func (g *Game) StepThroughConsole() {
 	writer := uilive.New()
 	writer.Start()
 	scanner := bufio.NewScanner(os.Stdin)
