@@ -30,8 +30,8 @@ type (
 	}
 )
 
-func (g *Game) Fill(cells [][]string, group map[Loc]int) error {
-	symbols := map[string]struct{}{}
+func (g *Game) Fill(cells [][]string, group map[Loc]int, symbols []string) error {
+	symbolMap := map[string]struct{}{}
 
 	// Fill in the cell values and track unique symbols
 	g.Board = make([][]GroupedCell, len(cells))
@@ -39,7 +39,7 @@ func (g *Game) Fill(cells [][]string, group map[Loc]int) error {
 		g.Board[y] = make([]GroupedCell, len(row))
 		for x, v := range row {
 			if v != "" {
-				symbols[v] = struct{}{}
+				symbolMap[v] = struct{}{}
 			}
 			g.Board[y][x] = GroupedCell{
 				Cell:  &Cell{value: v},
@@ -48,10 +48,13 @@ func (g *Game) Fill(cells [][]string, group map[Loc]int) error {
 		}
 	}
 
-	// Extract unique symbols and ensure they match the group count
-	g.Symbols = make([]string, 0, len(symbols))
-	for sym := range symbols {
-		g.Symbols = append(g.Symbols, sym)
+	g.Symbols = symbols
+	if len(g.Symbols) == 0 {
+		// Extract unique symbols and ensure they match the group count
+		g.Symbols = make([]string, 0, len(symbolMap))
+		for sym := range symbolMap {
+			g.Symbols = append(g.Symbols, sym)
+		}
 	}
 	if len(g.Symbols) == 0 {
 		return fmt.Errorf("no symbols found in the provided cells")
@@ -79,6 +82,10 @@ func (g *Game) Fill(cells [][]string, group map[Loc]int) error {
 }
 
 func (g *Game) FillBasic(cells [][]int) error {
+	return g.FillInts(cells, DefaultGroup9x9, []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"})
+}
+
+func (g *Game) FillInts(cells [][]int, group map[Loc]int, symbols []string) error {
 	strCells := make([][]string, len(cells))
 	for y, row := range cells {
 		strCells[y] = make([]string, len(row))
@@ -86,13 +93,10 @@ func (g *Game) FillBasic(cells [][]int) error {
 			if v == 0 {
 				continue
 			}
-			if v > 9 {
-				return fmt.Errorf("invalid cell[x:%d,y:%d] value: %d, expected between 1 and 9", x, y, v)
-			}
 			strCells[y][x] = strconv.Itoa(v)
 		}
 	}
-	return g.Fill(strCells, DefaultGropu9x9)
+	return g.Fill(strCells, group, nil)
 }
 
 func (c *Cell) Set(v string) {
@@ -144,4 +148,48 @@ func (g *Game) Won() bool {
 		}
 	}
 	return true // All cells are filled and have no candidates
+}
+
+func (g *Game) BadBoard() error {
+	rows, cols, groups := g.GetSectionedCells()
+	// Check all sections (rows, columns, groups)
+	sections := []struct {
+		name  string
+		cells [][]LocCell
+	}{
+		{"row", rows},
+		{"column", cols},
+		{"group", groups},
+	}
+
+	for _, section := range sections {
+		for i, cells := range section.cells {
+			values := make(map[string][]Loc)
+			singleCandidates := make(map[string][]Loc)
+
+			for _, lc := range cells {
+				if lc.Cell.value != "" {
+					values[lc.Cell.value] = append(values[lc.Cell.value], lc.Loc)
+				} else if len(lc.Cell.Candidates) == 1 {
+					singleCandidates[lc.Cell.Candidates[0]] = append(singleCandidates[lc.Cell.Candidates[0]], lc.Loc)
+				}
+			}
+
+			// Check for duplicate values
+			for v, locs := range values {
+				if len(locs) > 1 {
+					return fmt.Errorf("duplicate value '%s' in %s %d at positions %v", v, section.name, i, locs)
+				}
+			}
+
+			// Check for duplicate single candidates
+			for v, locs := range singleCandidates {
+				if len(locs) > 1 {
+					return fmt.Errorf("multiple cells with only candidate '%s' in %s %d at positions %v", v, section.name, i, locs)
+				}
+			}
+		}
+	}
+
+	return nil // Board is valid
 }

@@ -3,6 +3,7 @@ package sudoku
 import (
 	"fmt"
 	"math/rand/v2"
+	"slices"
 )
 
 type (
@@ -22,6 +23,7 @@ type CandidateEliminator struct {
 var Eliminators = []CandidateEliminator{
 	EliminatorFilledCell,
 	EliminatorMatchingCandidates,
+	EliminatorGroupAndRowColumn,
 }
 
 func (g *Game) GetSectionedCells() (rows [][]LocCell, cols [][]LocCell, groups [][]LocCell) {
@@ -55,14 +57,26 @@ func (g *Game) GetSectionedCells() (rows [][]LocCell, cols [][]LocCell, groups [
 	return rows, cols, groups
 }
 
-func (g *Game) EliminateCandidates() (change string, _ error) {
+func (g *Game) EliminateCandidates(onlySimples bool) (change string, _ error) {
 	rows, cols, groups := g.GetSectionedCells()
 
 	if g.RandomEliminators {
 		// Shuffle the eliminators to randomize the order of elimination
-		rand.Shuffle(len(Eliminators), func(i, j int) { Eliminators[i], Eliminators[j] = Eliminators[j], Eliminators[i] })
+		//rand.Shuffle(len(Eliminators), func(i, j int) { Eliminators[i], Eliminators[j] = Eliminators[j], Eliminators[i] })
+		slices.SortFunc(Eliminators, func(a, b CandidateEliminator) int {
+			if a.Simple != b.Simple {
+				if a.Simple {
+					return -1 // Simple eliminators come first // TODO see if this is still needed after fixing the error
+				}
+				return 1 // Non-simple eliminators come after simple ones
+			}
+			return rand.IntN(2)*2 - 1 // Randomly order them if they are both simple or both not simple
+		})
 	}
 	for _, eliminator := range Eliminators {
+		if onlySimples && !eliminator.Simple {
+			continue // Skip non-simple eliminators if onlySimples is true
+		}
 		if eliminator.PartitionEliminator != nil {
 			partitions := []struct {
 				name  string

@@ -2,8 +2,12 @@ package sudoku
 
 import (
 	"encoding/json"
+	"log"
 	"slices"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEliminatorFilledCell(t *testing.T) {
@@ -80,4 +84,137 @@ func TestEliminatorMatchingCandidates(t *testing.T) {
 	if !slices.Equal(foundChanges, expectedChanges) {
 		t.Errorf("changes\nexpected %#v\ngot      %#v", expectedChanges, foundChanges)
 	}
+}
+
+func TestEliminatorGroupAndRowColumn(t *testing.T) {
+	// TODO figure out why this is not working
+
+	tests := []struct {
+		name     string
+		board    [][]int
+		expected []string // Expected changes
+	}{
+		{
+			name: "Rows",
+			board: [][]int{
+				{9, 8, 7, 1, 2, 3, 0, 0, 0},
+				{6, 5, 4, 0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0},
+
+				{0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0},
+
+				{0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0},
+			},
+			expected: []string{
+				"removed candidates (x:2,y:3) [1 2 3]",
+				"removed candidates (x:2,y:4) [1 2 3]",
+				"removed candidates (x:2,y:5) [1 2 3]",
+				"removed candidates (x:2,y:6) [1 2 3]",
+				"removed candidates (x:2,y:7) [1 2 3]",
+				"removed candidates (x:2,y:8) [1 2 3]",
+			},
+		},
+		{
+			name: "Columns",
+			board: [][]int{
+				{9, 6, 0, 0, 0, 0, 0, 0, 0},
+				{8, 5, 0, 0, 0, 0, 0, 0, 0},
+				{7, 4, 0, 0, 0, 0, 0, 0, 0},
+
+				{1, 0, 0, 0, 0, 0, 0, 0, 0},
+				{2, 0, 0, 0, 0, 0, 0, 0, 0},
+				{3, 0, 0, 0, 0, 0, 0, 0, 0},
+
+				{0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0},
+			},
+			expected: []string{
+				"removed candidates (x:3,y:2) [1 2 3]",
+				"removed candidates (x:4,y:2) [1 2 3]",
+				"removed candidates (x:5,y:2) [1 2 3]",
+				"removed candidates (x:6,y:2) [1 2 3]",
+				"removed candidates (x:7,y:2) [1 2 3]",
+				"removed candidates (x:8,y:2) [1 2 3]",
+			},
+		},
+		{
+			name: "Hard",
+			board: [][]int{
+				{5, 0, 0, 0, 2, 7, 0, 0, 0},
+				{3, 0, 0, 0, 0, 0, 5, 0, 6},
+				{0, 4, 0, 3, 0, 0, 0, 0, 0},
+
+				{6, 9, 0, 0, 0, 2, 0, 0, 0},
+				{0, 0, 1, 0, 9, 0, 0, 0, 0},
+				{0, 0, 0, 8, 0, 0, 0, 0, 5},
+
+				{0, 0, 8, 0, 0, 0, 0, 9, 0},
+				{4, 0, 0, 0, 0, 6, 0, 0, 1},
+				{0, 0, 0, 0, 0, 1, 0, 7, 0},
+			},
+			expected: []string{
+				"removed candidates (x:0,y:4) [8]",
+				"removed candidates (x:1,y:1) [8]",
+				"removed candidates (x:1,y:4) [8]",
+				"removed candidates (x:2,y:3) [5]",
+				"removed candidates (x:2,y:7) [5]",
+				"removed candidates (x:2,y:8) [5]",
+				"removed candidates (x:4,y:1) [8]",
+				"removed candidates (x:4,y:2) [5]",
+				"removed candidates (x:4,y:2) [8]",
+				"removed candidates (x:4,y:3) [5]",
+				"removed candidates (x:4,y:6) [5]",
+				"removed candidates (x:4,y:7) [5]",
+				"removed candidates (x:4,y:8) [5]",
+				"removed candidates (x:5,y:1) [8]",
+				"removed candidates (x:5,y:1) [9]",
+				"removed candidates (x:5,y:2) [9]",
+				"removed candidates (x:6,y:0) [1]",
+				"removed candidates (x:6,y:2) [1]",
+				"removed candidates (x:6,y:3) [1]",
+				"removed candidates (x:6,y:4) [8]",
+				"removed candidates (x:6,y:5) [1]",
+				"removed candidates (x:7,y:1) [8]",
+				"removed candidates (x:7,y:4) [8]",
+				"removed candidates (x:8,y:4) [8]",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := &Game{}
+			err := g.FillBasic(tt.board)
+			require.NoError(t, err)
+			for {
+				if _, err := g.EliminateCandidates(true); err != nil {
+					break
+				}
+			}
+
+			foundChanges := []string{}
+			for {
+				change, err := EliminatorGroupAndRowColumn.GameEliminator(g)
+				require.NoError(t, err)
+				if change == "" {
+					break
+				}
+				foundChanges = append(foundChanges, change)
+				t.Log(change)
+				log.Println(change)
+
+				require.NoError(t, g.BadBoard())
+			}
+
+			slices.Sort(foundChanges)
+			slices.Sort(tt.expected)
+			assert.EqualValues(t, tt.expected, foundChanges)
+		})
+	}
+
 }

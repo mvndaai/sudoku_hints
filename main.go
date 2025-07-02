@@ -41,13 +41,13 @@ func main() {
 	_ = basicHard // Use this to avoid unused variable error
 
 	g := sudoku.Game{}
-	//err := g.FillBasic(basicHard)
-	err := g.FillBasic(basicEasy)
+	err := g.FillBasic(basicHard)
+	//err := g.FillBasic(basicEasy)
 	if err != nil {
 		log.Fatalf("Failed to fill game: %v", err)
 	}
 
-	//g.HideSimple = true        // Hide basic eliminators
-	g.RandomEliminators = true // Randomize the order of eliminators
+	g.HideSimple = true // Hide basic eliminators
+	//g.RandomEliminators = true // Randomize the order of eliminators
 	g.StepThrough()
 }
