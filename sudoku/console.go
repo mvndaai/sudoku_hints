@@ -73,6 +73,7 @@ func (g *Game) StepThrough() {
 				writer.Flush()
 				fmt.Fprintln(writer, g.String())
 				fmt.Fprint(writer, color.New(color.FgRed).Sprintf("\nError: %v\n", err))
+				//fmt.Fprint(writer, allChanges)
 				break
 			}
 			if change != "" {

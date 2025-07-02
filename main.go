@@ -47,7 +47,7 @@ func main() {
 		log.Fatalf("Failed to fill game: %v", err)
 	}
 
-	g.HideSimple = true // Hide basic eliminators
-	//g.RandomEliminators = true // Randomize the order of eliminators
+	g.HideSimple = true        // Hide basic eliminators
+	g.RandomEliminators = true // Randomize the order of eliminators
 	g.StepThrough()
 }

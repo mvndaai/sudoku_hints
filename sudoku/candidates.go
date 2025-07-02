@@ -62,11 +62,11 @@ func (g *Game) EliminateCandidates(onlySimples bool) (change string, _ error) {
 
 	if g.RandomEliminators {
 		// Shuffle the eliminators to randomize the order of elimination
-		//rand.Shuffle(len(Eliminators), func(i, j int) { Eliminators[i], Eliminators[j] = Eliminators[j], Eliminators[i] })
+
 		slices.SortFunc(Eliminators, func(a, b CandidateEliminator) int {
 			if a.Simple != b.Simple {
 				if a.Simple {
-					return -1 // Simple eliminators come first // TODO see if this is still needed after fixing the error
+					return -1 // Simple eliminators come first
 				}
 				return 1 // Non-simple eliminators come after simple ones
 			}

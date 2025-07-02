@@ -67,7 +67,6 @@ var EliminatorMatchingCandidates = CandidateEliminator{
 	},
 }
 
-// TODO fix this function. It somehow causes errors
 var EliminatorGroupAndRowColumn = CandidateEliminator{
 	Name:        "Group and Row/Column",
 	Description: "If a group only has values in a row or column, then remove those candidates from the other cells in that row or column.",
@@ -196,7 +195,7 @@ var EliminatorGroupAndRowColumn = CandidateEliminator{
 		for y, row := range g.Board {
 			for x, gc := range row {
 				i := slices.IndexFunc(rowsToRemoveSlice, func(h candiateHolder) bool {
-					return x == h.loc && gc.group != h.group
+					return y == h.loc && gc.group != h.group
 				})
 				if i >= 0 {
 					removed := gc.Cell.RemoveCandiates(rowsToRemoveSlice[i].candiates)
@@ -205,7 +204,7 @@ var EliminatorGroupAndRowColumn = CandidateEliminator{
 					}
 				}
 				i = slices.IndexFunc(colsToRemoveSlice, func(h candiateHolder) bool {
-					return y == h.loc && gc.group != h.group
+					return x == h.loc && gc.group != h.group
 				})
 				if i >= 0 {
 					removed := gc.Cell.RemoveCandiates(colsToRemoveSlice[i].candiates)

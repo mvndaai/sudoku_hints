@@ -87,8 +87,6 @@ func TestEliminatorMatchingCandidates(t *testing.T) {
 }
 
 func TestEliminatorGroupAndRowColumn(t *testing.T) {
-	// TODO figure out why this is not working
-
 	tests := []struct {
 		name     string
 		board    [][]int
@@ -110,12 +108,9 @@ func TestEliminatorGroupAndRowColumn(t *testing.T) {
 				{0, 0, 0, 0, 0, 0, 0, 0, 0},
 			},
 			expected: []string{
-				"removed candidates (x:2,y:3) [1 2 3]",
-				"removed candidates (x:2,y:4) [1 2 3]",
-				"removed candidates (x:2,y:5) [1 2 3]",
-				"removed candidates (x:2,y:6) [1 2 3]",
-				"removed candidates (x:2,y:7) [1 2 3]",
-				"removed candidates (x:2,y:8) [1 2 3]",
+				"removed candidates (x:6,y:2) [1 2 3]",
+				"removed candidates (x:7,y:2) [1 2 3]",
+				"removed candidates (x:8,y:2) [1 2 3]",
 			},
 		},
 		{
@@ -134,12 +129,9 @@ func TestEliminatorGroupAndRowColumn(t *testing.T) {
 				{0, 0, 0, 0, 0, 0, 0, 0, 0},
 			},
 			expected: []string{
-				"removed candidates (x:3,y:2) [1 2 3]",
-				"removed candidates (x:4,y:2) [1 2 3]",
-				"removed candidates (x:5,y:2) [1 2 3]",
-				"removed candidates (x:6,y:2) [1 2 3]",
-				"removed candidates (x:7,y:2) [1 2 3]",
-				"removed candidates (x:8,y:2) [1 2 3]",
+				"removed candidates (x:2,y:6) [1 2 3]",
+				"removed candidates (x:2,y:7) [1 2 3]",
+				"removed candidates (x:2,y:8) [1 2 3]",
 			},
 		},
 		{
@@ -158,28 +150,19 @@ func TestEliminatorGroupAndRowColumn(t *testing.T) {
 				{0, 0, 0, 0, 0, 1, 0, 7, 0},
 			},
 			expected: []string{
-				"removed candidates (x:0,y:4) [8]",
-				"removed candidates (x:1,y:1) [8]",
-				"removed candidates (x:1,y:4) [8]",
-				"removed candidates (x:2,y:3) [5]",
+				"removed candidates (x:1,y:7) [5]",
 				"removed candidates (x:2,y:7) [5]",
-				"removed candidates (x:2,y:8) [5]",
+				"removed candidates (x:3,y:0) [9]",
+				"removed candidates (x:3,y:1) [9]",
+				"removed candidates (x:3,y:7) [5]",
 				"removed candidates (x:4,y:1) [8]",
-				"removed candidates (x:4,y:2) [5]",
 				"removed candidates (x:4,y:2) [8]",
-				"removed candidates (x:4,y:3) [5]",
-				"removed candidates (x:4,y:6) [5]",
 				"removed candidates (x:4,y:7) [5]",
-				"removed candidates (x:4,y:8) [5]",
-				"removed candidates (x:5,y:1) [8]",
-				"removed candidates (x:5,y:1) [9]",
-				"removed candidates (x:5,y:2) [9]",
-				"removed candidates (x:6,y:0) [1]",
-				"removed candidates (x:6,y:2) [1]",
-				"removed candidates (x:6,y:3) [1]",
+				"removed candidates (x:6,y:0) [9]",
+				"removed candidates (x:6,y:2) [9]",
+				"removed candidates (x:6,y:4) [6]",
 				"removed candidates (x:6,y:4) [8]",
-				"removed candidates (x:6,y:5) [1]",
-				"removed candidates (x:7,y:1) [8]",
+				"removed candidates (x:6,y:5) [6]",
 				"removed candidates (x:7,y:4) [8]",
 				"removed candidates (x:8,y:4) [8]",
 			},
