@@ -22,6 +22,7 @@ type CandidateEliminator struct {
 // Rules is a collection of rules that can be applied to a Sudoku game.
 var Eliminators = []CandidateEliminator{
 	EliminatorFilledCell,
+	EliminatorUniqueCandidate,
 	EliminatorMatchingCandidates,
 	EliminatorGroupAndRowColumn,
 }

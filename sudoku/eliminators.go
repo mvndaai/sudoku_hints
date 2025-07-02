@@ -25,6 +25,46 @@ var EliminatorFilledCell = CandidateEliminator{
 	Simple: true,
 }
 
+var EliminatorUniqueCandidate = CandidateEliminator{
+	Name:        "Unique Candidate",
+	Description: "Eliminates all other candidates if a cell has a unique candidate in its partition.",
+	PartitionEliminator: func(cells []LocCell) (string, error) {
+		candidates := map[string][]Loc{}
+
+		for _, c := range cells {
+			for _, candidate := range c.Cell.Candidates {
+				if _, exists := candidates[candidate]; !exists {
+					candidates[candidate] = []Loc{}
+				}
+				candidates[candidate] = append(candidates[candidate], c.Loc)
+			}
+		}
+
+		uniqueCandidates := map[Loc]string{}
+		for candidate, locs := range candidates {
+			if len(locs) == 1 {
+				uniqueCandidates[locs[0]] = candidate
+			}
+		}
+
+		for _, lc := range cells {
+			uniqueCandidate, ok := uniqueCandidates[lc.Loc]
+			if !ok {
+				continue // No unique candidate for this cell
+			}
+			toRemove := slices.DeleteFunc(slices.Clone(lc.Cell.Candidates), func(c string) bool {
+				return c == uniqueCandidate
+			})
+			removed := lc.Cell.RemoveCandiates(toRemove)
+			if len(removed) > 0 {
+				return fmt.Sprintf("removed candidates (x:%d,y:%d) %v", lc.Loc.X, lc.Loc.Y, removed), nil
+			}
+		}
+		return "", nil
+	},
+	Simple: true,
+}
+
 var EliminatorMatchingCandidates = CandidateEliminator{
 	Name:        "Matching Candidates",
 	Description: "Eliminates candidates if any cells have the same candidates.",
@@ -220,5 +260,5 @@ var EliminatorGroupAndRowColumn = CandidateEliminator{
 
 /* Rules to add
 ** If cells in the a partition group out the same candidates remove those from the others. Example [1 4], [4 6], [1 6] or [1 4], [4 6], [1 4 7].
-** If a group only has values in a row or column, then remove those candidates from the other cells in that row or column.
+** Unique candidates in partion group, must be that vaalue
  */

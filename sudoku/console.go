@@ -13,7 +13,7 @@ import (
 
 //github.com/gosuri/uilive
 
-func (g *Game) String() string {
+func (g *Game) String(lastUpdated *Loc) string {
 	colors := []color.Attribute{color.FgYellow, color.FgCyan}
 
 	var r string
@@ -21,8 +21,14 @@ func (g *Game) String() string {
 		if y != 0 {
 			r += "\n"
 		}
-		for _, gc := range row {
+		for x, gc := range row {
 			c := color.New(colors[gc.group%2])
+			if lastUpdated != nil && lastUpdated.X == x && lastUpdated.Y == y {
+				c = color.New(color.FgGreen, color.Bold) // Highlight the last updated cell
+			}
+			if !gc.Cell.startingValue && gc.Cell.value != "" {
+				c.Add(color.Bold) // Make non-starting values bold
+			}
 
 			v := gc.Cell.value
 			if v == "" {
@@ -62,8 +68,26 @@ func (g *Game) StepThrough() {
 	// start listening for updates and render
 	writer.Start()
 	scanner := bufio.NewScanner(os.Stdin)
+	var lastUpdated *Loc
 
-	fmt.Fprintln(writer, g.String())
+	if g.RunSimpleFirst {
+		// Run simple eliminators first quietly
+		for {
+			change, err := g.EliminateCandidates(true)
+			if err != nil {
+				writer.Flush()
+				fmt.Fprintln(writer, g.String(lastUpdated))
+				fmt.Fprint(writer, color.New(color.FgRed).Sprintf("\nError: %v\n", err))
+				//fmt.Fprint(writer, allChanges)
+				return
+			}
+			if change != "" {
+				break
+			}
+		}
+	}
+
+	fmt.Fprintln(writer, g.String(lastUpdated))
 	var solve bool
 	for {
 		x, y, v, ok := g.SingleCadidate()
@@ -71,7 +95,7 @@ func (g *Game) StepThrough() {
 			change, err := g.EliminateCandidates(false)
 			if err != nil {
 				writer.Flush()
-				fmt.Fprintln(writer, g.String())
+				fmt.Fprintln(writer, g.String(lastUpdated))
 				fmt.Fprint(writer, color.New(color.FgRed).Sprintf("\nError: %v\n", err))
 				//fmt.Fprint(writer, allChanges)
 				break
@@ -84,13 +108,14 @@ func (g *Game) StepThrough() {
 		}
 
 		f := fmt.Sprintf("Found single candidate at (%d, %d): %s\n", x, y, v)
+		lastUpdated = &Loc{X: x, Y: y}
 		fmt.Fprint(writer, f)
 		allChanges += f
 		g.Board[y][x].Cell.Set(v)
 
 		if err := g.BadBoard(); err != nil {
 			writer.Flush()
-			fmt.Fprintln(writer, g.String())
+			fmt.Fprintln(writer, g.String(lastUpdated))
 			fmt.Fprint(writer, color.New(color.FgRed).Sprintf("\nError: %v\n", err))
 			fmt.Fprint(writer, allChanges)
 			break
@@ -98,7 +123,7 @@ func (g *Game) StepThrough() {
 
 		if g.Won() {
 			writer.Flush()
-			fmt.Fprintln(writer, g.String())
+			fmt.Fprintln(writer, g.String(lastUpdated))
 			fmt.Fprintln(writer, color.New(color.FgGreen).Sprint("Congratulations! We solved the Sudoku puzzle!"))
 			break
 		}
@@ -113,7 +138,7 @@ func (g *Game) StepThrough() {
 			//fmt.Print("\033[H\033[2J") // Clear the console - needed because enter was breaking things
 		}
 		writer.Flush()
-		fmt.Fprintln(writer, g.String())
+		fmt.Fprintln(writer, g.String(lastUpdated))
 	}
 	writer.Stop()
 }

@@ -18,8 +18,9 @@ type (
 	}
 
 	Cell struct {
-		value      string
-		Candidates []string
+		value         string
+		Candidates    []string
+		startingValue bool // If true, this cell was part of the original puzzle and should not be changed
 	}
 
 	Game struct {
@@ -27,6 +28,7 @@ type (
 		Board             [][]GroupedCell
 		HideSimple        bool
 		RandomEliminators bool // If true, the eliminators will be run in a random order
+		RunSimpleFirst    bool // If true, the simple eliminators will be run quietly first
 	}
 )
 
@@ -38,11 +40,13 @@ func (g *Game) Fill(cells [][]string, group map[Loc]int, symbols []string) error
 	for y, row := range cells {
 		g.Board[y] = make([]GroupedCell, len(row))
 		for x, v := range row {
+			var hasStartingValue bool
 			if v != "" {
 				symbolMap[v] = struct{}{}
+				hasStartingValue = true
 			}
 			g.Board[y][x] = GroupedCell{
-				Cell:  &Cell{value: v},
+				Cell:  &Cell{value: v, startingValue: hasStartingValue},
 				group: group[Loc{X: x, Y: y}],
 			}
 		}
