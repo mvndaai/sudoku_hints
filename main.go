@@ -11,6 +11,7 @@ func main() {
 	g := sudoku.Game{}
 	err := g.FillBasic(boards.NYTHard2June2025)
 	//err := g.FillBasic(boards.BasicEasy)
+	//err := g.FillBasic(boards.BasicHard)
 	if err != nil {
 		log.Fatalf("Failed to fill game: %v", err)
 	}

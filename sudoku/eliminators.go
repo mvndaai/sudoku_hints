@@ -25,12 +25,25 @@ var EliminatorFilledCell = CandidateEliminator{
 	Simple: true,
 }
 
+type Locs []Loc
+
+func (l Locs) Key() string {
+	// Sort the locations to ensure consistent key generation
+	slices.SortFunc(l, func(a, b Loc) int {
+		if a.Y != b.Y {
+			return cmp.Compare(a.Y, b.Y)
+		}
+		return cmp.Compare(a.X, b.X)
+	})
+	return fmt.Sprint(l)
+}
+
+// TODO expand as hidden pairs/triples
 var EliminatorUniqueCandidate = CandidateEliminator{
 	Name:        "Unique Candidate",
 	Description: "Eliminates all other candidates if a cell has a unique candidate in its partition.",
 	PartitionEliminator: func(cells []LocCell) (string, error) {
-		candidates := map[string][]Loc{}
-
+		candidates := map[string]Locs{}
 		for _, c := range cells {
 			for _, candidate := range c.Cell.Candidates {
 				if _, exists := candidates[candidate]; !exists {
@@ -40,20 +53,47 @@ var EliminatorUniqueCandidate = CandidateEliminator{
 			}
 		}
 
-		uniqueCandidates := map[Loc]string{}
+		type uniqueCandidate struct {
+			candiates []string
+			locs      Locs
+		}
+		uniqueCandidatesBuilder := map[string]uniqueCandidate{}
 		for candidate, locs := range candidates {
-			if len(locs) == 1 {
-				uniqueCandidates[locs[0]] = candidate
+			key := locs.Key()
+			uc, exists := uniqueCandidatesBuilder[key]
+			if !exists {
+				uc = uniqueCandidate{candiates: []string{}, locs: locs}
+			}
+			uc.candiates = append(uc.candiates, candidate)
+			uniqueCandidatesBuilder[key] = uc
+		}
+
+		// Remove ones where len of candidates does not match the number of locations
+		for key, uc := range uniqueCandidatesBuilder {
+			if len(uc.candiates) != len(uc.locs) {
+				delete(uniqueCandidatesBuilder, key)
+				continue
+			}
+		}
+
+		if len(uniqueCandidatesBuilder) == 0 {
+			return "", nil // No unique candidates found
+		}
+
+		uniqueCandidates := map[Loc][]string{}
+		for _, uc := range uniqueCandidatesBuilder {
+			for _, loc := range uc.locs {
+				uniqueCandidates[loc] = uc.candiates
 			}
 		}
 
 		for _, lc := range cells {
-			uniqueCandidate, ok := uniqueCandidates[lc.Loc]
+			ucs, ok := uniqueCandidates[lc.Loc]
 			if !ok {
 				continue // No unique candidate for this cell
 			}
 			toRemove := slices.DeleteFunc(slices.Clone(lc.Cell.Candidates), func(c string) bool {
-				return c == uniqueCandidate
+				return slices.Contains(ucs, c)
 			})
 			removed := lc.Cell.RemoveCandiates(toRemove)
 			if len(removed) > 0 {
