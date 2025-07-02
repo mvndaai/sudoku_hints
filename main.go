@@ -9,7 +9,8 @@ import (
 
 func main() {
 	g := sudoku.Game{}
-	err := g.FillBasic(boards.NYTHard2June2025)
+	err := g.FillBasic(boards.SudokuDotComMasterA)
+	//err := g.FillBasic(boards.NYTHard2June2025)
 	//err := g.FillBasic(boards.BasicEasy)
 	//err := g.FillBasic(boards.BasicHard)
 	if err != nil {
