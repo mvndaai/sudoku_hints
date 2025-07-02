@@ -18,5 +18,6 @@ func main() {
 	//g.HideSimple = true // Hide basic eliminators
 	//g.RandomEliminators = true // Randomize the order of eliminators TODO this causes errors.
 	g.RunSimpleFirst = true // Run simple eliminators first quietly
-	g.StepThrough()
+	g.AutoSolve = true      // Automatically solve the game
+	g.StepThroughCosole()
 }

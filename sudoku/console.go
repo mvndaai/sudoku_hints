@@ -3,6 +3,7 @@ package sudoku
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/fatih/color"
@@ -63,21 +64,34 @@ func (g *Game) String(lastUpdated *Loc) string {
 
 var allChanges string
 
-func (g *Game) StepThrough() {
+type gameWriter interface {
+	io.Writer
+	Flush() error
+}
+
+type scanner interface {
+	Text() string
+	Scan() bool
+}
+
+func (g *Game) StepThroughCosole() {
 	writer := uilive.New()
-	// start listening for updates and render
 	writer.Start()
 	scanner := bufio.NewScanner(os.Stdin)
-	var lastUpdated *Loc
+	g.StepThrough(writer, scanner)
+	writer.Stop()
+}
 
+func (g *Game) StepThrough(w gameWriter, sc scanner) {
+	var lastUpdated *Loc
 	if g.RunSimpleFirst {
 		// Run simple eliminators first quietly
 		for {
 			change, err := g.EliminateCandidates(true)
 			if err != nil {
-				writer.Flush()
-				fmt.Fprintln(writer, g.String(lastUpdated))
-				fmt.Fprint(writer, color.New(color.FgRed).Sprintf("\nError: %v\n", err))
+				w.Flush()
+				fmt.Fprintln(w, g.String(lastUpdated))
+				fmt.Fprint(w, color.New(color.FgRed).Sprintf("\nError: %v\n", err))
 				//fmt.Fprint(writer, allChanges)
 				return
 			}
@@ -87,21 +101,21 @@ func (g *Game) StepThrough() {
 		}
 	}
 
-	fmt.Fprintln(writer, g.String(lastUpdated))
-	var solve bool
+	fmt.Fprintln(w, g.String(lastUpdated))
+	solve := g.AutoSolve
 	for {
 		x, y, v, ok := g.SingleCadidate()
 		if !ok {
 			change, err := g.EliminateCandidates(false)
 			if err != nil {
-				writer.Flush()
-				fmt.Fprintln(writer, g.String(lastUpdated))
-				fmt.Fprint(writer, color.New(color.FgRed).Sprintf("\nError: %v\n", err))
-				//fmt.Fprint(writer, allChanges)
+				w.Flush()
+				fmt.Fprintln(w, g.String(lastUpdated))
+				fmt.Fprint(w, color.New(color.FgRed).Sprintf("\nError: %v\n", err))
+				//fmt.Fprint(w, allChanges)
 				break
 			}
 			if change != "" {
-				fmt.Fprintln(writer, "Change: "+change)
+				fmt.Fprintln(w, "Change: "+change)
 				allChanges += change + "\n"
 			}
 			continue
@@ -109,36 +123,36 @@ func (g *Game) StepThrough() {
 
 		f := fmt.Sprintf("Found single candidate at (%d, %d): %s\n", x, y, v)
 		lastUpdated = &Loc{X: x, Y: y}
-		fmt.Fprint(writer, f)
+		fmt.Fprint(w, f)
 		allChanges += f
 		g.Board[y][x].Cell.Set(v)
 
 		if err := g.BadBoard(); err != nil {
-			writer.Flush()
-			fmt.Fprintln(writer, g.String(lastUpdated))
-			fmt.Fprint(writer, color.New(color.FgRed).Sprintf("\nError: %v\n", err))
-			fmt.Fprint(writer, allChanges)
+			w.Flush()
+			fmt.Fprintln(w, g.String(lastUpdated))
+			fmt.Fprint(w, color.New(color.FgRed).Sprintf("\nError: %v\n", err))
+			fmt.Fprint(w, allChanges)
 			break
 		}
 
 		if g.Won() {
-			writer.Flush()
-			fmt.Fprintln(writer, g.String(lastUpdated))
-			fmt.Fprintln(writer, color.New(color.FgGreen).Sprint("Congratulations! We solved the Sudoku puzzle!"))
+			w.Flush()
+			fmt.Fprintln(w, g.String(lastUpdated))
+			fmt.Fprintln(w, color.New(color.FgGreen).Sprint("Congratulations! We solved the Sudoku puzzle!"))
 			break
 		}
 
 		if !solve {
-			fmt.Fprint(writer, color.New(color.FgYellow).Sprint("Enter to continue "))
-			scanner.Scan()
-			if t := scanner.Text(); t == "solve" || t == "s" {
+			fmt.Fprint(w, color.New(color.FgYellow).Sprint("Enter to continue "))
+			sc.Scan()
+			if t := sc.Text(); t == "solve" || t == "s" {
 				solve = true
 			}
 			fmt.Printf("\033[1A\033[K") // Move cursor up and clear the line - this is needed to avoid the console being cluttered with "Enter to continue" messages
 			//fmt.Print("\033[H\033[2J") // Clear the console - needed because enter was breaking things
 		}
-		writer.Flush()
-		fmt.Fprintln(writer, g.String(lastUpdated))
+		w.Flush()
+		fmt.Fprintln(w, g.String(lastUpdated))
 	}
-	writer.Stop()
+
 }

@@ -29,6 +29,7 @@ type (
 		HideSimple        bool
 		RandomEliminators bool // If true, the eliminators will be run in a random order
 		RunSimpleFirst    bool // If true, the simple eliminators will be run quietly first
+		AutoSolve         bool
 	}
 )
 
