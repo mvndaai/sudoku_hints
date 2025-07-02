@@ -23,7 +23,7 @@ type CandidateEliminator struct {
 var Eliminators = []CandidateEliminator{
 	EliminatorFilledCell,
 	EliminatorUniqueCandidate,
-	EliminatorMatchingCandidates,
+	EliminatorCandidateChains,
 	EliminatorGroupAndRowColumn,
 }
 

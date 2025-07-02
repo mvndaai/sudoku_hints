@@ -78,7 +78,7 @@ func TestEliminatorEliminatorUniqueCandidate(t *testing.T) {
 	assert.EqualValues(t, expectedChanges, foundChanges)
 }
 
-func TestEliminatorMatchingCandidates(t *testing.T) {
+func TestEliminatorCandidateChains(t *testing.T) {
 	cells := []LocCell{
 		{Loc: Loc{X: 0, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"1", "2"}}},
 		{Loc: Loc{X: 1, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"1", "2"}}},
@@ -92,20 +92,20 @@ func TestEliminatorMatchingCandidates(t *testing.T) {
 	}
 
 	expectedChanges := []string{ // Note these can come in any order
-		"removed candidates (x:4,y:0) [4]",
-		"removed candidates (x:7,y:0) [2]",
-		"removed candidates (x:7,y:0) [3 4]",
-		"removed candidates (x:7,y:0) [5 6 7]",
-		"removed candidates (x:8,y:0) [1 2]",
-		"removed candidates (x:8,y:0) [3 4]",
-		"removed candidates (x:8,y:0) [5 6 7]",
+		"removed candidates (x:4,y:0) [4] from chain of size 2",
+		"removed candidates (x:7,y:0) [2] from chain of size 2",
+		"removed candidates (x:7,y:0) [3 4] from chain of size 2",
+		"removed candidates (x:7,y:0) [5 6 7] from chain of size 3",
+		"removed candidates (x:8,y:0) [1 2] from chain of size 2",
+		"removed candidates (x:8,y:0) [3 4] from chain of size 2",
+		"removed candidates (x:8,y:0) [5 6 7] from chain of size 3",
 	}
 
 	foundChanges := []string{}
 	for {
 		b, _ := json.Marshal(cells)
 		t.Logf("%s", b)
-		change, err := EliminatorMatchingCandidates.PartitionEliminator(cells)
+		change, err := EliminatorCandidateChains.PartitionEliminator(cells)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

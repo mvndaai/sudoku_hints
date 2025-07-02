@@ -105,48 +105,6 @@ var EliminatorUniqueCandidate = CandidateEliminator{
 	Simple: true,
 }
 
-var EliminatorMatchingCandidates = CandidateEliminator{
-	Name:        "Matching Candidates",
-	Description: "Eliminates candidates if any cells have the same candidates.",
-	PartitionEliminator: func(cells []LocCell) (string, error) {
-		candidatesCount := map[string]int{}
-		candidatesValues := map[string][]string{}
-
-		for _, c := range cells {
-			if len(c.Cell.Candidates) == 0 {
-				continue // Skip empty candidates
-			}
-			cs := fmt.Sprint(c.Cell.Candidates)
-			candidatesCount[cs]++
-			candidatesValues[cs] = c.Cell.Candidates
-		}
-
-		var viableGroups [][]string
-		for cs, count := range candidatesCount {
-			if count < 2 {
-				continue // We need at least two cells with the same candidates
-			}
-			if len(candidatesValues[cs]) != count {
-				continue // Ensure the candidates the number of candiates matches the count
-			}
-			viableGroups = append(viableGroups, candidatesValues[cs])
-		}
-
-		for _, vg := range viableGroups {
-			for _, lc := range cells {
-				if slices.Equal(lc.Cell.Candidates, vg) {
-					continue
-				}
-				removed := lc.Cell.RemoveCandiates(vg)
-				if len(removed) > 0 {
-					return fmt.Sprintf("removed candidates (x:%d,y:%d) %v", lc.Loc.X, lc.Loc.Y, removed), nil
-				}
-			}
-		}
-		return "", nil
-	},
-}
-
 var EliminatorGroupAndRowColumn = CandidateEliminator{
 	Name:        "Group and Row/Column",
 	Description: "If a group only has values in a row or column, then remove those candidates from the other cells in that row or column.",
@@ -298,7 +256,84 @@ var EliminatorGroupAndRowColumn = CandidateEliminator{
 	},
 }
 
-/* Rules to add
-** If cells in the a partition group out the same candidates remove those from the others. Example [1 4], [4 6], [1 6] or [1 4], [4 6], [1 4 7].
-** Unique candidates in partion group, must be that vaalue
- */
+var EliminatorCandidateChains = CandidateEliminator{
+	Name:        "Candidate Chains",
+	Description: "If N cells form a chain where they share exactly N candidates total, remove those candidates from other cells in the partition.",
+	PartitionEliminator: func(cells []LocCell) (string, error) {
+		// Get cells with candidates
+		candidateCells := []LocCell{}
+		for _, lc := range cells {
+			if len(lc.Cell.Candidates) >= 2 {
+				candidateCells = append(candidateCells, lc)
+			}
+		}
+
+		// Try all possible chain sizes from 2 to the number of cells
+		for chainSize := 2; chainSize <= len(candidateCells); chainSize++ {
+			// Generate all combinations of cells of the given chain size
+			combinations := getCombinations(candidateCells, chainSize)
+
+			for _, combo := range combinations {
+				// Collect all unique candidates from the cells in this combination
+				allCandidates := map[string]bool{}
+				for _, cell := range combo {
+					for _, c := range cell.Cell.Candidates {
+						allCandidates[c] = true
+					}
+				}
+
+				// Check if this forms a valid chain (N cells with N total candidates)
+				if len(allCandidates) == chainSize {
+					candidatesList := make([]string, 0, len(allCandidates))
+					for c := range allCandidates {
+						candidatesList = append(candidatesList, c)
+					}
+
+					// Create a map of locations in the chain for quick lookup
+					chainLocs := map[Loc]bool{}
+					for _, cell := range combo {
+						chainLocs[cell.Loc] = true
+					}
+
+					// Remove these candidates from all other cells
+					for _, lc := range cells {
+						if chainLocs[lc.Loc] {
+							continue
+						}
+						removed := lc.Cell.RemoveCandiates(candidatesList)
+						if len(removed) > 0 {
+							return fmt.Sprintf("removed candidates (x:%d,y:%d) %v", lc.Loc.X, lc.Loc.Y, removed), nil
+							//return fmt.Sprintf("removed candidates (x:%d,y:%d) %v from chain of size %d", lc.Loc.X, lc.Loc.Y, removed, chainSize), nil
+						}
+					}
+				}
+			}
+		}
+		return "", nil
+	},
+}
+
+// Helper function to generate all combinations of a given size
+func getCombinations(cells []LocCell, size int) [][]LocCell {
+	if size == 0 {
+		return [][]LocCell{{}}
+	}
+	if len(cells) < size {
+		return [][]LocCell{}
+	}
+
+	result := [][]LocCell{}
+
+	// Include first element
+	for _, combo := range getCombinations(cells[1:], size-1) {
+		newCombo := make([]LocCell, len(combo)+1)
+		newCombo[0] = cells[0]
+		copy(newCombo[1:], combo)
+		result = append(result, newCombo)
+	}
+
+	// Exclude first element
+	result = append(result, getCombinations(cells[1:], size)...)
+
+	return result
+}
