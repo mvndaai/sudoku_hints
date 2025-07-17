@@ -9,7 +9,7 @@ import (
 
 func main() {
 	g := sudoku.Game{}
-	err := g.FillBasic(boards.SudokuDotComMasterA)
+	err := g.FillBasic(boards.NYTHard17July2025)
 	//err := g.FillBasic(boards.NYTHard2June2025)
 	//err := g.FillBasic(boards.BasicEasy)
 	//err := g.FillBasic(boards.BasicHard)
@@ -20,6 +20,6 @@ func main() {
 	//g.HideSimple = true // Hide basic eliminators
 	//g.RandomEliminators = true // Randomize the order of eliminators TODO this causes errors.
 	g.RunSimpleFirst = true // Run simple eliminators first quietly
-	g.AutoSolve = true      // Automatically solve the game
+	//g.AutoSolve = true      // Automatically solve the game
 	g.StepThroughConsole()
 }

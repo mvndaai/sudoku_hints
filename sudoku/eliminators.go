@@ -302,8 +302,7 @@ var EliminatorCandidateChains = CandidateEliminator{
 						}
 						removed := lc.Cell.RemoveCandiates(candidatesList)
 						if len(removed) > 0 {
-							return fmt.Sprintf("removed candidates (x:%d,y:%d) %v", lc.Loc.X, lc.Loc.Y, removed), nil
-							//return fmt.Sprintf("removed candidates (x:%d,y:%d) %v from chain of size %d", lc.Loc.X, lc.Loc.Y, removed, chainSize), nil
+							return fmt.Sprintf("removed candidates (x:%d,y:%d) %v from chain of size %d", lc.Loc.X, lc.Loc.Y, removed, chainSize), nil
 						}
 					}
 				}
