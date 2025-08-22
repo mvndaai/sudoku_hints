@@ -33,3 +33,6 @@ go.work.sum
 
 # Bin file
 sudoku_hints
+
+# Ignore config.jsonc so it is never pushed to git
+html/config.jsonc
