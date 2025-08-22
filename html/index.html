@@ -1,0 +1,454 @@
+<html>
+    <head lang="en">
+        <title>Sudoku Hints</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8"/>
+        <script src="https://cdn.jsdelivr.net/gh/golang/go@go1.24.6/lib/wasm/wasm_exec.js"></script>
+        <script>
+            const go = new Go();
+            const loadGo = WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject)
+        </script>
+        <style>
+            body, .column {
+                background-color: linen;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+            .row {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+            }
+            .failure {
+                background: rgb(255, 100, 100);
+            }
+            :popover-open {
+                position: absolute;
+                inset: unset;
+                left: 5px;
+                bottom: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Sudoku Hints</h1>
+        <p>Get hints for solving Sudoku puzzles.</p>
+
+        <canvas id="sudokuCanvas" width="450" height="450" style="border: 2px solid #333; background: white;" tabindex="0"></canvas>
+
+        <div class="row" style="margin-top: 20px;">
+            <button id="uploadBtn" style="margin: 10px; padding: 10px 20px; font-size: 16px;">
+            📷 Upload Image or Take Photo
+            </button>
+            <input type="file" id="imageInput" accept="image/*" capture="environment" style="display: none;">
+        </div>
+
+        <script>
+            document.getElementById('uploadBtn').addEventListener('click', function() {
+            document.getElementById('imageInput').click();
+            });
+
+            document.getElementById('imageInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                makeErrorToast(`Processing image: ${file.name}`);
+
+                // Convert file to base64 and send to API
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                const base64Data = e.target.result.split(',')[1]; // Remove data:image/...;base64, prefix
+
+                const formData = new URLSearchParams();
+                formData.append('image', base64Data);
+
+                fetch('https://sudoku-ocr.p.rapidapi.com/scan-puzzle', {
+                    method: 'POST',
+                    headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'x-rapidapi-host': 'sudoku-ocr.p.rapidapi.com',
+                    'x-rapidapi-key': golang.getKey()
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    makeErrorToast('Image processed successfully!');
+                    console.log('OCR Result:', data);
+                    // You can process the OCR result here and update the puzzle
+                })
+                .catch(error => {
+                    makeErrorToast('Error processing image: ' + error.message);
+                    console.error('Error:', error);
+                });
+                };
+                reader.readAsDataURL(file);
+            }
+            });
+        </script></div>
+        <script>
+            document.getElementById('uploadBtn').addEventListener('click', function() {
+            document.getElementById('imageInput').click();
+            });
+            document.getElementById('imageInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                makeErrorToast(`Selected image: ${file.name}`);
+                // Here you can add code to process the image
+                // For example, display it or send it for processing
+            }
+            });
+        </script></div>
+        <script>
+            const canvas = document.getElementById('sudokuCanvas');
+            let selectedCell = null;
+            let currentPuzzleData = null; // Initialize as null, will be set when examplePuzzle is available
+            
+            // Add click event listener to canvas
+            canvas.addEventListener('click', function(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            const col = Math.floor(x / cellSize);
+            const row = Math.floor(y / cellSize);
+            
+            if (row >= 0 && row < 9 && col >= 0 && col < 9) {
+                makeErrorToast(`Clicked cell at row ${row}, col ${col}`);
+                
+                const cell = currentPuzzleData.puzzle.rows[row].cells[col];
+                if (cell.cell_type === "unsolved") {
+                selectedCell = { row, col };
+                canvas.focus();
+                redrawPuzzle();
+                } else {
+                selectedCell = null;
+                redrawPuzzle();
+                }
+            }
+            });
+            
+            // Add keydown event listener
+            canvas.addEventListener('keydown', function(event) {
+            if (!selectedCell) return;
+            
+            const key = event.key;
+            if (/^[1-9]$/.test(key)) {
+                const number = parseInt(key);
+                makeErrorToast(`Input ${number} at row ${selectedCell.row}, col ${selectedCell.col}`);
+                
+                const cell = currentPuzzleData.puzzle.rows[selectedCell.row].cells[selectedCell.col];
+                
+                if (cell.candidates && cell.candidates.includes(number)) {
+                // Set the cell as solved
+                cell.cell_type = "solved";
+                cell.value = number;
+                delete cell.candidates;
+                redrawPuzzle();
+                }
+            } else if (key === 'Delete' || key === 'Backspace') {
+                const cell = currentPuzzleData.puzzle.rows[selectedCell.row].cells[selectedCell.col];
+                if (cell.cell_type === "solved") {
+                // Convert back to unsolved with original candidates
+                cell.cell_type = "unsolved";
+                delete cell.value;
+                cell.candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+                redrawPuzzle();
+                }
+            }
+            });
+            
+            function drawSelectedCell() {
+            if (!selectedCell) return;
+            
+            const x = selectedCell.col * cellSize;
+            const y = selectedCell.row * cellSize;
+            
+            ctx.fillStyle = 'rgba(0, 122, 204, 0.3)';
+            ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+            
+            ctx.strokeStyle = '#007acc';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+            }
+            function redrawPuzzle() {
+            if (currentPuzzleData) {
+                loadSudokuPuzzle(currentPuzzleData);
+                drawSelectedCell();
+            }
+            }
+        </script>
+        <script>
+            // Example Sudoku puzzle data
+            const examplePuzzle = {
+            puzzle: {
+            rows: [
+            {
+                cells: [
+                { cell_type: "given", value: 5 },
+                { cell_type: "solved", value: 3 },
+                { cell_type: "unsolved", candidates: [4, 6, 7] },
+                { cell_type: "unsolved", candidates: [6, 7] },
+                { cell_type: "solved", value: 7 },
+                { cell_type: "unsolved", candidates: [8, 9] },
+                { cell_type: "unsolved", candidates: [1, 9] },
+                { cell_type: "solved", value: 1 },
+                { cell_type: "solved", value: 2 }
+                ]
+            },
+            {
+                cells: [
+                { cell_type: "unsolved", candidates: [6, 7] },
+                { cell_type: "solved", value: 7 },
+                { cell_type: "solved", value: 2 },
+                { cell_type: "solved", value: 1 },
+                { cell_type: "solved", value: 9 },
+                { cell_type: "solved", value: 5 },
+                { cell_type: "solved", value: 3 },
+                { cell_type: "solved", value: 4 },
+                { cell_type: "solved", value: 8 }
+                ]
+            },
+            {
+                cells: [
+                { cell_type: "solved", value: 1 },
+                { cell_type: "solved", value: 9 },
+                { cell_type: "solved", value: 8 },
+                { cell_type: "solved", value: 3 },
+                { cell_type: "solved", value: 4 },
+                { cell_type: "solved", value: 2 },
+                { cell_type: "solved", value: 5 },
+                { cell_type: "solved", value: 6 },
+                { cell_type: "solved", value: 7 }
+                ]
+            },
+            {
+                cells: [
+                { cell_type: "unsolved", candidates: [8, 9] },
+                { cell_type: "solved", value: 5 },
+                { cell_type: "solved", value: 9 },
+                { cell_type: "solved", value: 7 },
+                { cell_type: "solved", value: 6 },
+                { cell_type: "solved", value: 1 },
+                { cell_type: "solved", value: 4 },
+                { cell_type: "solved", value: 2 },
+                { cell_type: "solved", value: 3 }
+                ]
+            },
+            {
+                cells: [
+                { cell_type: "solved", value: 4 },
+                { cell_type: "solved", value: 2 },
+                { cell_type: "solved", value: 6 },
+                { cell_type: "solved", value: 8 },
+                { cell_type: "solved", value: 5 },
+                { cell_type: "solved", value: 3 },
+                { cell_type: "solved", value: 7 },
+                { cell_type: "solved", value: 9 },
+                { cell_type: "solved", value: 1 }
+                ]
+            },
+            {
+                cells: [
+                { cell_type: "solved", value: 7 },
+                { cell_type: "solved", value: 1 },
+                { cell_type: "solved", value: 3 },
+                { cell_type: "solved", value: 9 },
+                { cell_type: "solved", value: 2 },
+                { cell_type: "solved", value: 4 },
+                { cell_type: "solved", value: 8 },
+                { cell_type: "solved", value: 5 },
+                { cell_type: "solved", value: 6 }
+                ]
+            },
+            {
+                cells: [
+                { cell_type: "solved", value: 9 },
+                { cell_type: "solved", value: 6 },
+                { cell_type: "unsolved", candidates: [1, 4, 5] },
+                { cell_type: "solved", value: 5 },
+                { cell_type: "solved", value: 3 },
+                { cell_type: "solved", value: 7 },
+                { cell_type: "solved", value: 2 },
+                { cell_type: "solved", value: 8 },
+                { cell_type: "unsolved", candidates: [4] }
+                ]
+            },
+            {
+                cells: [
+                { cell_type: "solved", value: 2 },
+                { cell_type: "solved", value: 8 },
+                { cell_type: "solved", value: 7 },
+                { cell_type: "solved", value: 4 },
+                { cell_type: "solved", value: 1 },
+                { cell_type: "solved", value: 9 },
+                { cell_type: "solved", value: 6 },
+                { cell_type: "solved", value: 3 },
+                { cell_type: "solved", value: 5 }
+                ]
+            },
+            {
+                cells: [
+                { cell_type: "solved", value: 3 },
+                { cell_type: "solved", value: 4 },
+                { cell_type: "unsolved", candidates: [1, 5] },
+                { cell_type: "solved", value: 2 },
+                { cell_type: "solved", value: 8 },
+                { cell_type: "solved", value: 6 },
+                { cell_type: "unsolved", candidates: [9] },
+                { cell_type: "solved", value: 7 },
+                { cell_type: "unsolved", candidates: [4, 9] }
+                ]
+            }
+            ]
+            }
+            };
+
+            const ctx = canvas.getContext('2d');
+            const cellSize = 50;
+            
+            function drawSudokuGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid lines
+            ctx.strokeStyle = '#000';
+            for (let i = 0; i <= 9; i++) {
+            ctx.lineWidth = (i % 3 === 0) ? 3 : 1;
+            ctx.beginPath();
+            // Vertical lines
+            ctx.moveTo(i * cellSize, 0);
+            ctx.lineTo(i * cellSize, 9 * cellSize);
+            // Horizontal lines
+            ctx.moveTo(0, i * cellSize);
+            ctx.lineTo(9 * cellSize, i * cellSize);
+            ctx.stroke();
+            }
+            }
+            
+            function drawCellBackground(row, col, cellType) {
+            if (cellType === "given") {
+            const x = col * cellSize;
+            const y = row * cellSize;
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+            }
+            }
+            
+            function drawNumber(row, col, number) {
+            const x = col * cellSize + cellSize / 2;
+            const y = row * cellSize + cellSize / 2;
+            
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = '24px Arial';
+            ctx.fillStyle = '#000';
+            ctx.fillText(number, x, y);
+            }
+            
+            function drawCandidates(row, col, candidates) {
+            const cellX = col * cellSize;
+            const cellY = row * cellSize;
+            
+            ctx.font = '10px Arial';
+            ctx.fillStyle = '#999';
+            ctx.textAlign = 'center';
+            
+            for (let i = 0; i < candidates.length && i < 9; i++) {
+            const candidateRow = Math.floor(i / 3);
+            const candidateCol = i % 3;
+            const x = cellX + 8 + candidateCol * 11;
+            const y = cellY + 12 + candidateRow * 11;
+            ctx.fillText(candidates[i], x, y);
+            }
+            }
+            
+            function loadSudokuPuzzle(puzzleData) {
+            drawSudokuGrid();
+            
+            const rows = puzzleData.puzzle.rows;
+            for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+            const cells = rows[rowIndex].cells;
+            for (let colIndex = 0; colIndex < cells.length; colIndex++) {
+            const cell = cells[colIndex];
+            
+            // Draw cell background first
+            drawCellBackground(rowIndex, colIndex, cell.cell_type);
+            
+            if (cell.cell_type === "solved" || cell.cell_type === "given") {
+                drawNumber(rowIndex, colIndex, cell.value);
+            } else if (cell.cell_type === "unsolved" && cell.candidates) {
+                drawCandidates(rowIndex, colIndex, cell.candidates);
+            }
+            }
+            }
+            }
+            
+            // Initialize the grid
+            drawSudokuGrid();
+
+            // Load the example puzzle on page load
+            window.addEventListener('load', function() {
+            currentPuzzleData = examplePuzzle;
+            loadSudokuPuzzle(examplePuzzle);
+            });
+        </script>
+
+        <style>#forkongithub a{background:#000;color:#fff;text-decoration:none;font-family:arial,sans-serif;text-align:center;font-weight:bold;padding:5px 40px;font-size:1rem;line-height:2rem;position:relative;transition:0.5s;}#forkongithub a:hover{background:#c11;color:#fff;}#forkongithub a::before,#forkongithub a::after{content:"";width:100%;display:block;position:absolute;top:1px;left:0;height:1px;background:#fff;}#forkongithub a::after{bottom:1px;top:auto;}@media screen and (min-width:1000px){#forkongithub{position:fixed;display:block;top:0;right:0;width:200px;overflow:hidden;height:200px;z-index:9999;}#forkongithub a{width:200px;position:absolute;top:60px;right:-60px;transform:rotate(45deg);-webkit-transform:rotate(45deg);-ms-transform:rotate(45deg);-moz-transform:rotate(45deg);-o-transform:rotate(45deg);box-shadow:4px 4px 10px rgba(0,0,0,0.8);}}</style>
+        <span id="forkongithub"><a href="https://github.com/mvndaai/sudoku_hints">Fork me on GitHub</a></span>
+        <script>
+            const btns = document.querySelectorAll('button');
+            loadGo.then((result) => {
+                go.run(result.instance);
+                document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+            });
+
+
+            // https://mdn.github.io/dom-examples/popover-api/toast-popovers/
+            function makeErrorToast(msg) {
+                // Create an element and make it into a popover
+                const popover = document.createElement("article");
+                popover.popover = "manual";
+                popover.classList.add("toast");
+                popover.classList.add("newest");
+                popover.classList.add("failure");
+
+                // Give the toast its text content, and add it to the DOM
+                popover.textContent = msg;
+                document.body.appendChild(popover);
+
+                // Show the popover
+                popover.showPopover();
+
+                // Remove the toast again after 4 seconds
+                setTimeout(() => {
+                    popover.hidePopover();
+                    popover.remove();
+                }, 4000);
+
+                // When a new toast appears, run the movetoastsUp() function
+                popover.addEventListener("toggle", (event) => {
+                    if (event.newState === "open") {
+                        moveToastsUp();
+                    }
+                });
+            }
+            function moveToastsUp() {
+                const toasts = document.querySelectorAll(".toast");
+                toasts.forEach((toast) => {
+                    // If the toast is the one that has just appeared, we don't want it to move up.
+                    if (toast.classList.contains("newest")) {
+                        toast.style.bottom = `5px`;
+                        toast.classList.remove("newest");
+                    } else {
+                        // Move up all the other toasts by 50px to make way for the new one
+                        const prevValue = toast.style.bottom.replace("px", "");
+                        const newValue = parseInt(prevValue) + 50;
+                        toast.style.bottom = `${newValue}px`;
+                    }
+                });
+            }
+        </script>
+    </body>
+</html>
