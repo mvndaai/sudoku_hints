@@ -57,17 +57,12 @@
                 makeErrorToast(`Processing image: ${file.name}`);
 
                 // Convert file to base64 and send to API
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                const base64Data = e.target.result.split(',')[1]; // Remove data:image/...;base64, prefix
-
-                const formData = new URLSearchParams();
-                formData.append('image', base64Data);
+                const formData = new FormData();
+                formData.append('file', file);
 
                 fetch('https://sudoku-ocr.p.rapidapi.com/scan-puzzle', {
                     method: 'POST',
                     headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
                     'x-rapidapi-host': 'sudoku-ocr.p.rapidapi.com',
                     'x-rapidapi-key': golang.getKey()
                     },
@@ -77,31 +72,21 @@
                 .then(data => {
                     makeErrorToast('Image processed successfully!');
                     console.log('OCR Result:', data);
+
+                    // Load the OCR result into the canvas
+                    if (data && data.puzzle) {
+                        currentPuzzleData = data;
+                        loadSudokuPuzzle(data);
+                        selectedCell = null; // Clear any selected cell
+                    }
                     // You can process the OCR result here and update the puzzle
                 })
-                .catch(error => {
-                    makeErrorToast('Error processing image: ' + error.message);
-                    console.error('Error:', error);
+                    .catch(error => {
+                        makeErrorToast('Error processing image: ' + error.message);
+                        console.error('Error:', error);
+                    });
+                }
                 });
-                };
-                reader.readAsDataURL(file);
-            }
-            });
-        </script></div>
-        <script>
-            document.getElementById('uploadBtn').addEventListener('click', function() {
-            document.getElementById('imageInput').click();
-            });
-            document.getElementById('imageInput').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                makeErrorToast(`Selected image: ${file.name}`);
-                // Here you can add code to process the image
-                // For example, display it or send it for processing
-            }
-            });
-        </script></div>
-        <script>
             const canvas = document.getElementById('sudokuCanvas');
             let selectedCell = null;
             let currentPuzzleData = null; // Initialize as null, will be set when examplePuzzle is available
@@ -365,6 +350,7 @@
             }
             
             function loadSudokuPuzzle(puzzleData) {
+                // TODO call the golang code to get the hints.
             drawSudokuGrid();
             
             const rows = puzzleData.puzzle.rows;
