@@ -1,0 +1,16 @@
+package sudoku_test
+
+import (
+	"testing"
+
+	"github.com/mvndaai/sudoku_hints/sudoku"
+	"github.com/mvndaai/sudoku_hints/sudoku/boards"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestOCRFormat(t *testing.T) {
+	example := `{"puzzle":{"rows":[{"cells":[{"cell_type":"given","value":5},{"cell_type":"solved","value":3},{"cell_type":"unsolved","candidates":[4,6,7]},{"cell_type":"unsolved","candidates":[6,7]},{"cell_type":"solved","value":7},{"cell_type":"unsolved","candidates":[8,9]},{"cell_type":"unsolved","candidates":[1,9]},{"cell_type":"solved","value":1},{"cell_type":"solved","value":2}]},{"cells":[{"cell_type":"unsolved","candidates":[6,7]},{"cell_type":"solved","value":7},{"cell_type":"solved","value":2},{"cell_type":"solved","value":1},{"cell_type":"solved","value":9},{"cell_type":"solved","value":5},{"cell_type":"solved","value":3},{"cell_type":"solved","value":4},{"cell_type":"solved","value":8}]},{"cells":[{"cell_type":"solved","value":1},{"cell_type":"solved","value":9},{"cell_type":"solved","value":8},{"cell_type":"solved","value":3},{"cell_type":"solved","value":4},{"cell_type":"solved","value":2},{"cell_type":"solved","value":5},{"cell_type":"solved","value":6},{"cell_type":"solved","value":7}]},{"cells":[{"cell_type":"unsolved","candidates":[8,9]},{"cell_type":"solved","value":5},{"cell_type":"solved","value":9},{"cell_type":"solved","value":7},{"cell_type":"solved","value":6},{"cell_type":"solved","value":1},{"cell_type":"solved","value":4},{"cell_type":"solved","value":2},{"cell_type":"solved","value":3}]},{"cells":[{"cell_type":"solved","value":4},{"cell_type":"solved","value":2},{"cell_type":"solved","value":6},{"cell_type":"solved","value":8},{"cell_type":"solved","value":5},{"cell_type":"solved","value":3},{"cell_type":"solved","value":7},{"cell_type":"solved","value":9},{"cell_type":"solved","value":1}]},{"cells":[{"cell_type":"solved","value":7},{"cell_type":"solved","value":1},{"cell_type":"solved","value":3},{"cell_type":"solved","value":9},{"cell_type":"solved","value":2},{"cell_type":"solved","value":4},{"cell_type":"solved","value":8},{"cell_type":"solved","value":5},{"cell_type":"solved","value":6}]},{"cells":[{"cell_type":"solved","value":9},{"cell_type":"solved","value":6},{"cell_type":"unsolved","candidates":[1,4,5]},{"cell_type":"solved","value":5},{"cell_type":"solved","value":3},{"cell_type":"solved","value":7},{"cell_type":"solved","value":2},{"cell_type":"solved","value":8},{"cell_type":"unsolved","candidates":[4]}]},{"cells":[{"cell_type":"solved","value":2},{"cell_type":"solved","value":8},{"cell_type":"solved","value":7},{"cell_type":"solved","value":4},{"cell_type":"solved","value":1},{"cell_type":"solved","value":9},{"cell_type":"solved","value":6},{"cell_type":"solved","value":3},{"cell_type":"solved","value":5}]},{"cells":[{"cell_type":"solved","value":3},{"cell_type":"solved","value":4},{"cell_type":"unsolved","candidates":[1,5]},{"cell_type":"solved","value":2},{"cell_type":"solved","value":8},{"cell_type":"solved","value":6},{"cell_type":"unsolved","candidates":[9]},{"cell_type":"solved","value":7},{"cell_type":"unsolved","candidates":[4,9]}]}]}}`
+	rows, err := sudoku.ConvertFromOCRFormat(example)
+	assert.NoError(t, err)
+	assert.EqualValues(t, boards.OCRExample, rows)
+}

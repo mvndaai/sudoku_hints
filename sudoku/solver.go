@@ -1,13 +1,10 @@
 package sudoku
 
 import (
-	"bufio"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/fatih/color"
-	"github.com/gosuri/uilive"
 )
 
 // These are functions that print in the bash console
@@ -27,11 +24,11 @@ func (g *Game) String(lastUpdated *Loc) string {
 			if lastUpdated != nil && lastUpdated.X == x && lastUpdated.Y == y {
 				c = color.New(color.FgGreen, color.Bold) // Highlight the last updated cell
 			}
-			if !gc.Cell.startingValue && gc.Cell.value != "" {
+			if !gc.Cell.IsPreFilled && gc.Cell.Value != "" {
 				c.Add(color.Bold) // Make non-starting values bold
 			}
 
-			v := gc.Cell.value
+			v := gc.Cell.Value
 			if v == "" {
 				v = "⛝" // Use underscore for empty cells
 			}
@@ -72,14 +69,6 @@ type gameWriter interface {
 type scanner interface {
 	Text() string
 	Scan() bool
-}
-
-func (g *Game) StepThroughConsole() {
-	writer := uilive.New()
-	writer.Start()
-	scanner := bufio.NewScanner(os.Stdin)
-	g.StepThrough(writer, scanner)
-	writer.Stop()
 }
 
 func (g *Game) StepThrough(w gameWriter, sc scanner) {
@@ -123,9 +112,11 @@ func (g *Game) StepThrough(w gameWriter, sc scanner) {
 
 		f := fmt.Sprintf("Found single candidate at (x:%d, y:%d): %s\n", x, y, v)
 		lastUpdated = &Loc{X: x, Y: y}
+		g.SetLastFilled(x, y)
 		fmt.Fprint(w, f)
 		allChanges += f
 		g.Board[y][x].Cell.Set(v)
+		g.SetLastFilled(x, y)
 
 		if err := g.BadBoard(); err != nil {
 			w.Flush()

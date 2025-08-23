@@ -12,7 +12,7 @@ var EliminatorFilledCell = CandidateEliminator{
 	PartitionEliminator: func(cells []LocCell) (string, error) {
 		found := []string{}
 		for _, c := range cells {
-			found = append(found, c.Cell.value)
+			found = append(found, c.Cell.Value)
 		}
 		for _, lc := range cells {
 			removed := lc.Cell.RemoveCandiates(found)

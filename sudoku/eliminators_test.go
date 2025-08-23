@@ -12,15 +12,15 @@ import (
 
 func TestEliminatorFilledCell(t *testing.T) {
 	cells := []LocCell{
-		{Loc: Loc{X: 0, Y: 0}, Cell: &Cell{value: "1", Candidates: nil}},
-		{Loc: Loc{X: 1, Y: 0}, Cell: &Cell{value: "2", Candidates: nil}},
-		{Loc: Loc{X: 2, Y: 0}, Cell: &Cell{value: "3", Candidates: nil}},
-		{Loc: Loc{X: 3, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}},
-		{Loc: Loc{X: 4, Y: 0}, Cell: &Cell{value: "5", Candidates: nil}},
-		{Loc: Loc{X: 5, Y: 0}, Cell: &Cell{value: "6", Candidates: nil}},
-		{Loc: Loc{X: 6, Y: 0}, Cell: &Cell{value: "7", Candidates: nil}},
-		{Loc: Loc{X: 7, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}},
-		{Loc: Loc{X: 8, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}},
+		{Loc: Loc{X: 0, Y: 0}, Cell: &Cell{Value: "1", Candidates: nil}},
+		{Loc: Loc{X: 1, Y: 0}, Cell: &Cell{Value: "2", Candidates: nil}},
+		{Loc: Loc{X: 2, Y: 0}, Cell: &Cell{Value: "3", Candidates: nil}},
+		{Loc: Loc{X: 3, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}},
+		{Loc: Loc{X: 4, Y: 0}, Cell: &Cell{Value: "5", Candidates: nil}},
+		{Loc: Loc{X: 5, Y: 0}, Cell: &Cell{Value: "6", Candidates: nil}},
+		{Loc: Loc{X: 6, Y: 0}, Cell: &Cell{Value: "7", Candidates: nil}},
+		{Loc: Loc{X: 7, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}},
+		{Loc: Loc{X: 8, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}},
 	}
 
 	expectedChanges := []string{
@@ -43,15 +43,15 @@ func TestEliminatorFilledCell(t *testing.T) {
 
 func TestEliminatorEliminatorUniqueCandidate(t *testing.T) {
 	cells := []LocCell{
-		{Loc: Loc{X: 0, Y: 0}, Cell: &Cell{value: "1", Candidates: nil}},
-		{Loc: Loc{X: 1, Y: 0}, Cell: &Cell{value: "2", Candidates: nil}},
-		{Loc: Loc{X: 2, Y: 0}, Cell: &Cell{value: "3", Candidates: nil}},
-		{Loc: Loc{X: 3, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"4", "5"}}},
-		{Loc: Loc{X: 4, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"4", "5"}}},
-		{Loc: Loc{X: 5, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"4", "5", "6"}}},
-		{Loc: Loc{X: 6, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"7"}}},
-		{Loc: Loc{X: 7, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"8", "9"}}},
-		{Loc: Loc{X: 8, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"8", "9"}}},
+		{Loc: Loc{X: 0, Y: 0}, Cell: &Cell{Value: "1", Candidates: nil}},
+		{Loc: Loc{X: 1, Y: 0}, Cell: &Cell{Value: "2", Candidates: nil}},
+		{Loc: Loc{X: 2, Y: 0}, Cell: &Cell{Value: "3", Candidates: nil}},
+		{Loc: Loc{X: 3, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"4", "5"}}},
+		{Loc: Loc{X: 4, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"4", "5"}}},
+		{Loc: Loc{X: 5, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"4", "5", "6"}}},
+		{Loc: Loc{X: 6, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"7"}}},
+		{Loc: Loc{X: 7, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"8", "9"}}},
+		{Loc: Loc{X: 8, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"8", "9"}}},
 	}
 
 	expectedChanges := []string{ // Note these can come in any order
@@ -80,15 +80,15 @@ func TestEliminatorEliminatorUniqueCandidate(t *testing.T) {
 
 func TestEliminatorCandidateChains(t *testing.T) {
 	cells := []LocCell{
-		{Loc: Loc{X: 0, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"1", "2"}}},
-		{Loc: Loc{X: 1, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"1", "2"}}},
-		{Loc: Loc{X: 2, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"3", "4"}}},
-		{Loc: Loc{X: 3, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"3", "4"}}},
-		{Loc: Loc{X: 4, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"4", "5", "6", "7"}}},
-		{Loc: Loc{X: 5, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"5", "6", "7"}}},
-		{Loc: Loc{X: 6, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"5", "6", "7"}}},
-		{Loc: Loc{X: 7, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"2", "3", "4", "5", "6", "7", "8", "9"}}},
-		{Loc: Loc{X: 8, Y: 0}, Cell: &Cell{value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}},
+		{Loc: Loc{X: 0, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"1", "2"}}},
+		{Loc: Loc{X: 1, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"1", "2"}}},
+		{Loc: Loc{X: 2, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"3", "4"}}},
+		{Loc: Loc{X: 3, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"3", "4"}}},
+		{Loc: Loc{X: 4, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"4", "5", "6", "7"}}},
+		{Loc: Loc{X: 5, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"5", "6", "7"}}},
+		{Loc: Loc{X: 6, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"5", "6", "7"}}},
+		{Loc: Loc{X: 7, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"2", "3", "4", "5", "6", "7", "8", "9"}}},
+		{Loc: Loc{X: 8, Y: 0}, Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}},
 	}
 
 	expectedChanges := []string{ // Note these can come in any order

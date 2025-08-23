@@ -9,7 +9,7 @@ import (
 type (
 	GroupedCell struct {
 		group int
-		Cell  *Cell
+		Cell  *Cell `json:"cell"`
 	}
 
 	LocCell struct {
@@ -18,9 +18,10 @@ type (
 	}
 
 	Cell struct {
-		value         string
-		Candidates    []string
-		startingValue bool // If true, this cell was part of the original puzzle and should not be changed
+		Value        string   `json:"value"`
+		Candidates   []string `json:"candidates"`
+		IsPreFilled  bool     `json:"isPreFilled"` // If true, this cell was part of the original puzzle and should not be changed
+		IsLastFilled bool     `json:"isLastFilled"`
 	}
 
 	Game struct {
@@ -47,7 +48,7 @@ func (g *Game) Fill(cells [][]string, group map[Loc]int, symbols []string) error
 				hasStartingValue = true
 			}
 			g.Board[y][x] = GroupedCell{
-				Cell:  &Cell{value: v, startingValue: hasStartingValue},
+				Cell:  &Cell{Value: v, IsPreFilled: hasStartingValue},
 				group: group[Loc{X: x, Y: y}],
 			}
 		}
@@ -77,7 +78,7 @@ func (g *Game) Fill(cells [][]string, group map[Loc]int, symbols []string) error
 	// Initialize options for empty cells
 	for y := range g.Board {
 		for x := range g.Board[y] {
-			if g.Board[y][x].Cell.value == "" {
+			if g.Board[y][x].Cell.Value == "" {
 				g.Board[y][x].Cell.Candidates = slices.Clone(g.Symbols)
 			}
 		}
@@ -105,12 +106,12 @@ func (g *Game) FillInts(cells [][]int, group map[Loc]int, symbols []string) erro
 }
 
 func (c *Cell) Set(v string) {
-	c.value = v
+	c.Value = v
 	c.Candidates = nil // Clear options since the cell is now filled
 }
 
 func (c *Cell) RemoveCandiates(vs []string) (removed []string) {
-	if c.value != "" {
+	if c.Value != "" {
 		return nil // Cell is already filled, nothing to remove
 	}
 
@@ -143,11 +144,24 @@ func (g *Game) SingleCadidate() (x, y int, v string, ok bool) {
 	return 0, 0, "", false
 }
 
+func (g *Game) SetLastFilled(x, y int) {
+	for iy := range g.Board {
+		for jx := range g.Board[iy] {
+			cell := g.Board[iy][jx].Cell
+			if iy == y && jx == x {
+				cell.IsLastFilled = true
+				continue
+			}
+			cell.IsLastFilled = false
+		}
+	}
+}
+
 func (g *Game) Won() bool {
 	for y := range g.Board {
 		for x := range g.Board[y] {
 			cell := g.Board[y][x].Cell
-			if cell.value == "" {
+			if cell.Value == "" {
 				return false // Found an empty cell
 			}
 		}
@@ -173,8 +187,8 @@ func (g *Game) BadBoard() error {
 			singleCandidates := make(map[string][]Loc)
 
 			for _, lc := range cells {
-				if lc.Cell.value != "" {
-					values[lc.Cell.value] = append(values[lc.Cell.value], lc.Loc)
+				if lc.Cell.Value != "" {
+					values[lc.Cell.Value] = append(values[lc.Cell.Value], lc.Loc)
 				} else if len(lc.Cell.Candidates) == 1 {
 					singleCandidates[lc.Cell.Candidates[0]] = append(singleCandidates[lc.Cell.Candidates[0]], lc.Loc)
 				}
