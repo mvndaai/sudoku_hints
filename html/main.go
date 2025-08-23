@@ -15,6 +15,8 @@ func main() {
 	var m = make(map[string]any)
 	m["getKey"] = getKey()
 	m["random"] = getRandomBoard()
+	m["convertOCR"] = convertOCR()
+	m["next"] = next()
 
 	js.Global().Set("golang", m)
 
@@ -34,9 +36,6 @@ func getKey() js.Func {
 func getRandomBoard() js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
 		g := sudoku.Game{}
-
-		//board := boards.RandomBasicBoard()
-
 		err := g.FillBasic(boards.RandomBasicBoard())
 		if err != nil {
 			return err
@@ -46,9 +45,46 @@ func getRandomBoard() js.Func {
 		if err != nil {
 			return err
 		}
-
 		return string(b)
+	})
+}
 
-		//return board
+func convertOCR() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) any {
+
+		board, err := sudoku.ConvertFromOCRFormat(args[0].String())
+		if err != nil {
+			return err
+		}
+
+		g := sudoku.Game{}
+		g.FillBasic(board)
+		b, err := json.Marshal(g.Board)
+		if err != nil {
+			return err
+		}
+		return string(b)
+	})
+}
+
+func next() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		board := [][]sudoku.GroupedCell{}
+		err := json.Unmarshal([]byte(args[0].String()), &board)
+		if err != nil {
+			return err
+		}
+
+		g := sudoku.Game{}
+		g.FillBoard(board)
+		g.RunOnce = true
+
+		g.StepThroughJavascript(nil)
+
+		b, err := json.Marshal(g.Board)
+		if err != nil {
+			return err
+		}
+		return string(b)
 	})
 }

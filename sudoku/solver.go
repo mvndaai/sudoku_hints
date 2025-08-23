@@ -134,6 +134,10 @@ func (g *Game) StepThrough(w gameWriter, sc scanner) {
 		}
 
 		if !solve {
+			if g.RunOnce {
+				return
+			}
+
 			fmt.Fprint(w, color.New(color.FgYellow).Sprint("Enter to continue "))
 			sc.Scan()
 			if t := sc.Text(); t == "solve" || t == "s" {
@@ -145,5 +149,4 @@ func (g *Game) StepThrough(w gameWriter, sc scanner) {
 		w.Flush()
 		fmt.Fprintln(w, g.String(lastUpdated))
 	}
-
 }

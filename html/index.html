@@ -75,8 +75,7 @@
 
                     // Load the OCR result into the canvas
                     if (data && data.puzzle) {
-                        currentPuzzleData = data;
-                        loadSudokuPuzzle(data);
+                        loadSudokuPuzzle(JSON.parse(golang.convertOCR(data)));
                         selectedCell = null; // Clear any selected cell
                     }
                     // You can process the OCR result here and update the puzzle
@@ -90,21 +89,21 @@
             const canvas = document.getElementById('sudokuCanvas');
             let selectedCell = null;
             let currentPuzzleData = null; // Initialize as null, will be set when examplePuzzle is available
-            
+
             // Add click event listener to canvas
             canvas.addEventListener('click', function(event) {
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
-            
+
             const col = Math.floor(x / cellSize);
             const row = Math.floor(y / cellSize);
-            
+
             if (row >= 0 && row < 9 && col >= 0 && col < 9) {
                 makeErrorToast(`Clicked cell at row ${row}, col ${col}`);
-                
-                const cell = currentPuzzleData.puzzle.rows[row].cells[col];
-                if (cell.cell_type === "unsolved") {
+
+                const cell = currentPuzzleData[row][col].cell;
+                if (!cell.isPreFilled && (cell.value === "" || !cell.value)) {
                 selectedCell = { row, col };
                 canvas.focus();
                 redrawPuzzle();
@@ -114,46 +113,43 @@
                 }
             }
             });
-            
+
             // Add keydown event listener
             canvas.addEventListener('keydown', function(event) {
             if (!selectedCell) return;
-            
+
             const key = event.key;
             if (/^[1-9]$/.test(key)) {
                 const number = parseInt(key);
                 makeErrorToast(`Input ${number} at row ${selectedCell.row}, col ${selectedCell.col}`);
-                
-                const cell = currentPuzzleData.puzzle.rows[selectedCell.row].cells[selectedCell.col];
-                
-                if (cell.candidates && cell.candidates.includes(number)) {
+
+                const cell = currentPuzzleData[selectedCell.row][selectedCell.col].cell;
+
+                if (cell.candidates && cell.candidates.includes(number.toString())) {
                 // Set the cell as solved
-                cell.cell_type = "solved";
-                cell.value = number;
-                delete cell.candidates;
+                cell.value = number.toString();
+                cell.candidates = null;
                 redrawPuzzle();
                 }
             } else if (key === 'Delete' || key === 'Backspace') {
-                const cell = currentPuzzleData.puzzle.rows[selectedCell.row].cells[selectedCell.col];
-                if (cell.cell_type === "solved") {
+                const cell = currentPuzzleData[selectedCell.row][selectedCell.col].cell;
+                if (cell.value && cell.value !== "" && !cell.isPreFilled) {
                 // Convert back to unsolved with original candidates
-                cell.cell_type = "unsolved";
-                delete cell.value;
-                cell.candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-                redrawPuzzle();
+                cell.value = "";
+                cell.candidates = ["1","2","3","4","5","6","7","8","9"];
                 }
             }
             });
-            
+
             function drawSelectedCell() {
             if (!selectedCell) return;
-            
+
             const x = selectedCell.col * cellSize;
             const y = selectedCell.row * cellSize;
-            
+
             ctx.fillStyle = 'rgba(0, 122, 204, 0.3)';
             ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
-            
+
             ctx.strokeStyle = '#007acc';
             ctx.lineWidth = 3;
             ctx.strokeRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
@@ -164,141 +160,12 @@
                 drawSelectedCell();
             }
             }
-        </script>
-        <script>
-            // Example Sudoku puzzle data
-            const examplePuzzle = {
-            puzzle: {
-            rows: [
-            {
-                cells: [
-                { cell_type: "given", value: 5 },
-                { cell_type: "solved", value: 3 },
-                { cell_type: "unsolved", candidates: [4, 6, 7] },
-                { cell_type: "unsolved", candidates: [6, 7] },
-                { cell_type: "solved", value: 7 },
-                { cell_type: "unsolved", candidates: [8, 9] },
-                { cell_type: "unsolved", candidates: [1, 9] },
-                { cell_type: "solved", value: 1 },
-                { cell_type: "solved", value: 2 }
-                ]
-            },
-            {
-                cells: [
-                { cell_type: "unsolved", candidates: [6, 7] },
-                { cell_type: "solved", value: 7 },
-                { cell_type: "solved", value: 2 },
-                { cell_type: "solved", value: 1 },
-                { cell_type: "solved", value: 9 },
-                { cell_type: "solved", value: 5 },
-                { cell_type: "solved", value: 3 },
-                { cell_type: "solved", value: 4 },
-                { cell_type: "solved", value: 8 }
-                ]
-            },
-            {
-                cells: [
-                { cell_type: "solved", value: 1 },
-                { cell_type: "solved", value: 9 },
-                { cell_type: "solved", value: 8 },
-                { cell_type: "solved", value: 3 },
-                { cell_type: "solved", value: 4 },
-                { cell_type: "solved", value: 2 },
-                { cell_type: "solved", value: 5 },
-                { cell_type: "solved", value: 6 },
-                { cell_type: "solved", value: 7 }
-                ]
-            },
-            {
-                cells: [
-                { cell_type: "unsolved", candidates: [8, 9] },
-                { cell_type: "solved", value: 5 },
-                { cell_type: "solved", value: 9 },
-                { cell_type: "solved", value: 7 },
-                { cell_type: "solved", value: 6 },
-                { cell_type: "solved", value: 1 },
-                { cell_type: "solved", value: 4 },
-                { cell_type: "solved", value: 2 },
-                { cell_type: "solved", value: 3 }
-                ]
-            },
-            {
-                cells: [
-                { cell_type: "solved", value: 4 },
-                { cell_type: "solved", value: 2 },
-                { cell_type: "solved", value: 6 },
-                { cell_type: "solved", value: 8 },
-                { cell_type: "solved", value: 5 },
-                { cell_type: "solved", value: 3 },
-                { cell_type: "solved", value: 7 },
-                { cell_type: "solved", value: 9 },
-                { cell_type: "solved", value: 1 }
-                ]
-            },
-            {
-                cells: [
-                { cell_type: "solved", value: 7 },
-                { cell_type: "solved", value: 1 },
-                { cell_type: "solved", value: 3 },
-                { cell_type: "solved", value: 9 },
-                { cell_type: "solved", value: 2 },
-                { cell_type: "solved", value: 4 },
-                { cell_type: "solved", value: 8 },
-                { cell_type: "solved", value: 5 },
-                { cell_type: "solved", value: 6 }
-                ]
-            },
-            {
-                cells: [
-                { cell_type: "solved", value: 9 },
-                { cell_type: "solved", value: 6 },
-                { cell_type: "unsolved", candidates: [1, 4, 5] },
-                { cell_type: "solved", value: 5 },
-                { cell_type: "solved", value: 3 },
-                { cell_type: "solved", value: 7 },
-                { cell_type: "solved", value: 2 },
-                { cell_type: "solved", value: 8 },
-                { cell_type: "unsolved", candidates: [4] }
-                ]
-            },
-            {
-                cells: [
-                { cell_type: "solved", value: 2 },
-                { cell_type: "solved", value: 8 },
-                { cell_type: "solved", value: 7 },
-                { cell_type: "solved", value: 4 },
-                { cell_type: "solved", value: 1 },
-                { cell_type: "solved", value: 9 },
-                { cell_type: "solved", value: 6 },
-                { cell_type: "solved", value: 3 },
-                { cell_type: "solved", value: 5 }
-                ]
-            },
-            {
-                cells: [
-                { cell_type: "solved", value: 3 },
-                { cell_type: "solved", value: 4 },
-                { cell_type: "unsolved", candidates: [1, 5] },
-                { cell_type: "solved", value: 2 },
-                { cell_type: "solved", value: 8 },
-                { cell_type: "solved", value: 6 },
-                { cell_type: "unsolved", candidates: [9] },
-                { cell_type: "solved", value: 7 },
-                { cell_type: "unsolved", candidates: [4, 9] }
-                ]
-            }
-            ]
-            }
-            };
 
-            //console.log(JSON.stringify(examplePuzzle))
-
-            const ctx = canvas.getContext('2d');
-            const cellSize = 50;
-            
+        const ctx = canvas.getContext('2d');
+        const cellSize = 50;
             function drawSudokuGrid() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
+
             // Draw grid lines
             ctx.strokeStyle = '#000';
             for (let i = 0; i <= 9; i++) {
@@ -313,35 +180,35 @@
             ctx.stroke();
             }
             }
-            
-            function drawCellBackground(row, col, cellType) {
-            if (cellType === "given") {
+
+            function drawCellBackground(row, col, isPreFilled) {
+            if (isPreFilled) {
             const x = col * cellSize;
             const y = row * cellSize;
             ctx.fillStyle = '#f0f0f0';
             ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
             }
             }
-            
+
             function drawNumber(row, col, number) {
             const x = col * cellSize + cellSize / 2;
             const y = row * cellSize + cellSize / 2;
-            
+
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.font = '24px Arial';
             ctx.fillStyle = '#000';
             ctx.fillText(number, x, y);
             }
-            
+
             function drawCandidates(row, col, candidates) {
             const cellX = col * cellSize;
             const cellY = row * cellSize;
-            
+
             ctx.font = '10px Arial';
             ctx.fillStyle = '#999';
             ctx.textAlign = 'center';
-            
+
             for (let i = 0; i < candidates.length && i < 9; i++) {
             const candidateRow = Math.floor(i / 3);
             const candidateCol = i % 3;
@@ -350,47 +217,53 @@
             ctx.fillText(candidates[i], x, y);
             }
             }
-            
+
             function loadSudokuPuzzle(puzzleData) {
-                // TODO call the golang code to get the hints.
+                currentPuzzleData = puzzleData;
+            // TODO call the golang code to get the hints.
             drawSudokuGrid();
-            
-            const rows = puzzleData.puzzle.rows;
-            for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-            const cells = rows[rowIndex].cells;
-            for (let colIndex = 0; colIndex < cells.length; colIndex++) {
-            const cell = cells[colIndex];
-            
+
+            for (let rowIndex = 0; rowIndex < puzzleData.length; rowIndex++) {
+            for (let colIndex = 0; colIndex < puzzleData[rowIndex].length; colIndex++) {
+            const cellWrapper = puzzleData[rowIndex][colIndex];
+            const cell = cellWrapper.cell;
+
             // Draw cell background first
-            drawCellBackground(rowIndex, colIndex, cell.cell_type);
-            
-            if (cell.cell_type === "solved" || cell.cell_type === "given") {
-                drawNumber(rowIndex, colIndex, cell.value);
-            } else if (cell.cell_type === "unsolved" && cell.candidates) {
-                drawCandidates(rowIndex, colIndex, cell.candidates);
+            drawCellBackground(rowIndex, colIndex, cell.isPreFilled);
+
+            if (cell.value && cell.value !== "") {
+            drawNumber(rowIndex, colIndex, parseInt(cell.value));
+            } else if (cell.candidates) {
+            drawCandidates(rowIndex, colIndex, cell.candidates.map(c => parseInt(c)));
             }
             }
             }
             }
-            
+
             // Initialize the grid
             drawSudokuGrid();
 
-            // Load the example puzzle on page load
-            window.addEventListener('load', function() {
-            currentPuzzleData = examplePuzzle;
-            loadSudokuPuzzle(examplePuzzle);
-            });
-        </script>
-
-        <style>#forkongithub a{background:#000;color:#fff;text-decoration:none;font-family:arial,sans-serif;text-align:center;font-weight:bold;padding:5px 40px;font-size:1rem;line-height:2rem;position:relative;transition:0.5s;}#forkongithub a:hover{background:#c11;color:#fff;}#forkongithub a::before,#forkongithub a::after{content:"";width:100%;display:block;position:absolute;top:1px;left:0;height:1px;background:#fff;}#forkongithub a::after{bottom:1px;top:auto;}@media screen and (min-width:1000px){#forkongithub{position:fixed;display:block;top:0;right:0;width:200px;overflow:hidden;height:200px;z-index:9999;}#forkongithub a{width:200px;position:absolute;top:60px;right:-60px;transform:rotate(45deg);-webkit-transform:rotate(45deg);-ms-transform:rotate(45deg);-moz-transform:rotate(45deg);-o-transform:rotate(45deg);box-shadow:4px 4px 10px rgba(0,0,0,0.8);}}</style>
-        <span id="forkongithub"><a href="https://github.com/mvndaai/sudoku_hints">Fork me on GitHub</a></span>
-        <script>
             const btns = document.querySelectorAll('button');
+            btns.forEach(btn => btn.disabled = true);
             loadGo.then((result) => {
                 go.run(result.instance);
-                document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+
+                // Initialize the grid
+                drawSudokuGrid();
+
+                const random = JSON.parse(golang.random());
+                console.log(JSON.stringify(random));
+
+                loadSudokuPuzzle(random);
+                btns.forEach(btn => btn.disabled = false);
             });
+
+            window.next = () => {
+                let next = golang.next(JSON.stringify(currentPuzzleData));
+                //console.log(next);
+                loadSudokuPuzzle(JSON.parse(next));
+            }
+
 
 
             // https://mdn.github.io/dom-examples/popover-api/toast-popovers/
@@ -438,5 +311,8 @@
                 });
             }
         </script>
+
+        <style>#forkongithub a{background:#000;color:#fff;text-decoration:none;font-family:arial,sans-serif;text-align:center;font-weight:bold;padding:5px 40px;font-size:1rem;line-height:2rem;position:relative;transition:0.5s;}#forkongithub a:hover{background:#c11;color:#fff;}#forkongithub a::before,#forkongithub a::after{content:"";width:100%;display:block;position:absolute;top:1px;left:0;height:1px;background:#fff;}#forkongithub a::after{bottom:1px;top:auto;}@media screen and (min-width:1000px){#forkongithub{position:fixed;display:block;top:0;right:0;width:200px;overflow:hidden;height:200px;z-index:9999;}#forkongithub a{width:200px;position:absolute;top:60px;right:-60px;transform:rotate(45deg);-webkit-transform:rotate(45deg);-ms-transform:rotate(45deg);-moz-transform:rotate(45deg);-o-transform:rotate(45deg);box-shadow:4px 4px 10px rgba(0,0,0,0.8);}}</style>
+        <span id="forkongithub"><a href="https://github.com/mvndaai/sudoku_hints">Fork me on GitHub</a></span>
     </body>
 </html>

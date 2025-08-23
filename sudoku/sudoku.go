@@ -30,6 +30,7 @@ type (
 		HideSimple        bool
 		RandomEliminators bool // If true, the eliminators will be run in a random order
 		RunSimpleFirst    bool // If true, the simple eliminators will be run quietly first
+		RunOnce           bool // If true, breaks after finding one value
 		AutoSolve         bool
 	}
 )
@@ -84,11 +85,40 @@ func (g *Game) Fill(cells [][]string, group map[Loc]int, symbols []string) error
 		}
 	}
 
+	err := g.EliminateCandidatesInit() // Initial elimination of candidates
+	if err != nil {
+		return fmt.Errorf("failed to initialize candidates: %w", err)
+	}
 	return nil
 }
 
 func (g *Game) FillBasic(cells [][]int) error {
 	return g.FillInts(cells, DefaultGroup9x9, []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"})
+}
+func (g *Game) FillBoard(board [][]GroupedCell) error {
+	// Extract cells and groups from the provided board
+	cells := make([][]string, len(board))
+	group := make(map[Loc]int)
+	symbolMap := map[string]struct{}{}
+
+	for y := range board {
+		cells[y] = make([]string, len(board[y]))
+		for x := range board[y] {
+			cells[y][x] = board[y][x].Cell.Value
+			group[Loc{X: x, Y: y}] = board[y][x].group
+			if board[y][x].Cell.Value != "" {
+				symbolMap[board[y][x].Cell.Value] = struct{}{}
+			}
+		}
+	}
+
+	// Extract symbols
+	symbols := make([]string, 0, len(symbolMap))
+	for sym := range symbolMap {
+		symbols = append(symbols, sym)
+	}
+
+	return g.Fill(cells, group, symbols)
 }
 
 func (g *Game) FillInts(cells [][]int, group map[Loc]int, symbols []string) error {
