@@ -83,27 +83,29 @@
             const canvas = document.getElementById('sudokuCanvas');
             let selectedCell = null;
             let currentPuzzleData = null; // Initialize as null, will be set when examplePuzzle is available
+            const ctx = canvas.getContext('2d');
+            const cellSize = 50;
 
             // Add click event listener to canvas
             canvas.addEventListener('click', function(event) {
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
+                const rect = canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
 
-            const col = Math.floor(x / cellSize);
-            const row = Math.floor(y / cellSize);
+                const col = Math.floor(x / cellSize);
+                const row = Math.floor(y / cellSize);
 
-            if (row >= 0 && row < 9 && col >= 0 && col < 9) {
-                //makeToast(`Clicked cell at row ${row}, col ${col}`);
-                const cell = currentPuzzleData[row][col].cell;
-                if (!cell.isPreFilled && (cell.value === "" || !cell.value)) {
-                    selectedCell = { row, col };
-                    canvas.focus();
-                } else {
-                    selectedCell = null;
+                if (row >= 0 && row < 9 && col >= 0 && col < 9) {
+                    //makeToast(`Clicked cell at row ${row}, col ${col}`);
+                    const cell = currentPuzzleData[row][col].cell;
+                    if (!cell.isPreFilled && (cell.value === "" || !cell.value)) {
+                        selectedCell = { row, col };
+                        canvas.focus();
+                    } else {
+                        selectedCell = null;
+                    }
+                    redrawPuzzle();
                 }
-                redrawPuzzle();
-            }
             });
 
             // Add keydown event listener
@@ -119,7 +121,6 @@
                     if (cell.candidates && cell.candidates.includes(number.toString())) {
                         // Set the cell as solved
                         cell.value = number.toString();
-                        cell.candidates = null;
                         redrawPuzzle();
                     }
                 } else if (key === 'Delete' || key === 'Backspace') {
@@ -127,7 +128,7 @@
                     if (cell.value && cell.value !== "" && !cell.isPreFilled) {
                         // Convert back to unsolved with original candidates
                         cell.value = "";
-                        cell.candidates = ["1","2","3","4","5","6","7","8","9"];
+                        redrawPuzzle();
                     }
                 }
             });
@@ -151,8 +152,6 @@
                 }
             }
 
-            const ctx = canvas.getContext('2d');
-            const cellSize = 50;
             function drawSudokuGrid() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
