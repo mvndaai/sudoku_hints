@@ -53,21 +53,14 @@
         </div>
 
         <script>
-            document.getElementById('uploadBtn').addEventListener('click', function() {
-            document.getElementById('imageInput').click();
-            });
+            document.getElementById('uploadBtn').addEventListener('click', () => document.getElementById('imageInput').click());
 
             // Utility: read a File and return Uint8Array bytes
             async function fileToBytes(file) {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const arrayBuffer = e.target.result;
-                        resolve(new Uint8Array(arrayBuffer));
-                    };
-                    reader.onerror = function(e) {
-                        reject(e);
-                    };
+                    reader.onload = (e) => resolve(new Uint8Array(e.target.result));
+                    reader.onerror = (e) => reject(e);
                     reader.readAsArrayBuffer(file);
                 });
             }
@@ -78,17 +71,8 @@
                 try {
                     const bytes = await fileToBytes(file);
                     const response = await golang.processOCR(file.name, bytes);
-                    //console.log('Raw response:', response);
-                    const data = JSON.parse(response);
                     makeToast('Image processed successfully!', 'success');
-                    //console.log('OCR Result:', data);
-                    //// Load the OCR result into the canvas
-                    //if (data && data.puzzle) {
-                    //    loadSudokuPuzzle(JSON.parse(golang.convertOCR(data)));
-                    //    selectedCell = null; // Clear any selected cell
-                    //}
-
-                    loadSudokuPuzzle(data);
+                    loadSudokuPuzzle(JSON.parse(response));
 
                 } catch (error) {
                     makeToast('Error processing image: ' + error.message, 'failure');
@@ -111,144 +95,140 @@
 
             if (row >= 0 && row < 9 && col >= 0 && col < 9) {
                 //makeToast(`Clicked cell at row ${row}, col ${col}`);
-
                 const cell = currentPuzzleData[row][col].cell;
                 if (!cell.isPreFilled && (cell.value === "" || !cell.value)) {
-                selectedCell = { row, col };
-                canvas.focus();
-                redrawPuzzle();
+                    selectedCell = { row, col };
+                    canvas.focus();
                 } else {
-                selectedCell = null;
-                redrawPuzzle();
+                    selectedCell = null;
                 }
+                redrawPuzzle();
             }
             });
 
             // Add keydown event listener
             canvas.addEventListener('keydown', function(event) {
-            if (!selectedCell) return;
+                if (!selectedCell) return;
 
-            const key = event.key;
-            if (/^[1-9]$/.test(key)) {
-                const number = parseInt(key);
-                //makeToast(`Input ${number} at row ${selectedCell.row}, col ${selectedCell.col}`);
+                const key = event.key;
+                if (/^[1-9]$/.test(key)) {
+                    const number = parseInt(key);
+                    //makeToast(`Input ${number} at row ${selectedCell.row}, col ${selectedCell.col}`);
 
-                const cell = currentPuzzleData[selectedCell.row][selectedCell.col].cell;
-
-                if (cell.candidates && cell.candidates.includes(number.toString())) {
-                // Set the cell as solved
-                cell.value = number.toString();
-                cell.candidates = null;
-                redrawPuzzle();
+                    const cell = currentPuzzleData[selectedCell.row][selectedCell.col].cell;
+                    if (cell.candidates && cell.candidates.includes(number.toString())) {
+                        // Set the cell as solved
+                        cell.value = number.toString();
+                        cell.candidates = null;
+                        redrawPuzzle();
+                    }
+                } else if (key === 'Delete' || key === 'Backspace') {
+                    const cell = currentPuzzleData[selectedCell.row][selectedCell.col].cell;
+                    if (cell.value && cell.value !== "" && !cell.isPreFilled) {
+                        // Convert back to unsolved with original candidates
+                        cell.value = "";
+                        cell.candidates = ["1","2","3","4","5","6","7","8","9"];
+                    }
                 }
-            } else if (key === 'Delete' || key === 'Backspace') {
-                const cell = currentPuzzleData[selectedCell.row][selectedCell.col].cell;
-                if (cell.value && cell.value !== "" && !cell.isPreFilled) {
-                // Convert back to unsolved with original candidates
-                cell.value = "";
-                cell.candidates = ["1","2","3","4","5","6","7","8","9"];
-                }
-            }
             });
 
             function drawSelectedCell() {
             if (!selectedCell) return;
+                const x = selectedCell.col * cellSize;
+                const y = selectedCell.row * cellSize;
 
-            const x = selectedCell.col * cellSize;
-            const y = selectedCell.row * cellSize;
+                ctx.fillStyle = 'rgba(0, 122, 204, 0.3)';
+                ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
 
-            ctx.fillStyle = 'rgba(0, 122, 204, 0.3)';
-            ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
-
-            ctx.strokeStyle = '#007acc';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+                ctx.strokeStyle = '#007acc';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
             }
             function redrawPuzzle() {
-            if (currentPuzzleData) {
-                loadSudokuPuzzle(currentPuzzleData);
-                drawSelectedCell();
-            }
+                if (currentPuzzleData) {
+                    loadSudokuPuzzle(currentPuzzleData);
+                    drawSelectedCell();
+                }
             }
 
-        const ctx = canvas.getContext('2d');
-        const cellSize = 50;
+            const ctx = canvas.getContext('2d');
+            const cellSize = 50;
             function drawSudokuGrid() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw grid lines
-            ctx.strokeStyle = '#000';
-            for (let i = 0; i <= 9; i++) {
-            ctx.lineWidth = (i % 3 === 0) ? 3 : 1;
-            ctx.beginPath();
-            // Vertical lines
-            ctx.moveTo(i * cellSize, 0);
-            ctx.lineTo(i * cellSize, 9 * cellSize);
-            // Horizontal lines
-            ctx.moveTo(0, i * cellSize);
-            ctx.lineTo(9 * cellSize, i * cellSize);
-            ctx.stroke();
-            }
+                // Draw grid lines
+                ctx.strokeStyle = '#000';
+                for (let i = 0; i <= 9; i++) {
+                ctx.lineWidth = (i % 3 === 0) ? 3 : 1;
+                ctx.beginPath();
+                // Vertical lines
+                ctx.moveTo(i * cellSize, 0);
+                ctx.lineTo(i * cellSize, 9 * cellSize);
+                // Horizontal lines
+                ctx.moveTo(0, i * cellSize);
+                ctx.lineTo(9 * cellSize, i * cellSize);
+                ctx.stroke();
+                }
             }
 
             function drawCellBackground(row, col, isPreFilled) {
-            if (isPreFilled) {
-            const x = col * cellSize;
-            const y = row * cellSize;
-            ctx.fillStyle = '#f0f0f0';
-            ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
-            }
+                if (isPreFilled) {
+                    const x = col * cellSize;
+                    const y = row * cellSize;
+                    ctx.fillStyle = '#f0f0f0';
+                    ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+                }
             }
 
             function drawNumber(row, col, number) {
-            const x = col * cellSize + cellSize / 2;
-            const y = row * cellSize + cellSize / 2;
+                const x = col * cellSize + cellSize / 2;
+                const y = row * cellSize + cellSize / 2;
 
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.font = '24px Arial';
-            ctx.fillStyle = '#000';
-            ctx.fillText(number, x, y);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '24px Arial';
+                ctx.fillStyle = '#000';
+                ctx.fillText(number, x, y);
             }
 
             function drawCandidates(row, col, candidates) {
-            const cellX = col * cellSize;
-            const cellY = row * cellSize;
+                const cellX = col * cellSize;
+                const cellY = row * cellSize;
 
-            ctx.font = '10px Arial';
-            ctx.fillStyle = '#999';
-            ctx.textAlign = 'center';
+                ctx.font = '10px Arial';
+                ctx.fillStyle = '#999';
+                ctx.textAlign = 'center';
 
-            for (let i = 0; i < candidates.length && i < 9; i++) {
-            const candidateRow = Math.floor(i / 3);
-            const candidateCol = i % 3;
-            const x = cellX + 8 + candidateCol * 11;
-            const y = cellY + 12 + candidateRow * 11;
-            ctx.fillText(candidates[i], x, y);
-            }
+                for (let i = 0; i < candidates.length && i < 9; i++) {
+                    const candidateRow = Math.floor(i / 3);
+                    const candidateCol = i % 3;
+                    const x = cellX + 8 + candidateCol * 11;
+                    const y = cellY + 12 + candidateRow * 11;
+                    ctx.fillText(candidates[i], x, y);
+                }
             }
 
             function loadSudokuPuzzle(puzzleData) {
                 console.log('Loading puzzle data:', puzzleData);
                 currentPuzzleData = puzzleData;
             // TODO call the golang code to get the hints.
-            drawSudokuGrid();
+                drawSudokuGrid();
 
-            for (let rowIndex = 0; rowIndex < puzzleData.length; rowIndex++) {
-            for (let colIndex = 0; colIndex < puzzleData[rowIndex].length; colIndex++) {
-            const cellWrapper = puzzleData[rowIndex][colIndex];
-            const cell = cellWrapper.cell;
+                for (let rowIndex = 0; rowIndex < puzzleData.length; rowIndex++) {
+                    for (let colIndex = 0; colIndex < puzzleData[rowIndex].length; colIndex++) {
+                        const cellWrapper = puzzleData[rowIndex][colIndex];
+                        const cell = cellWrapper.cell;
 
-            // Draw cell background first
-            drawCellBackground(rowIndex, colIndex, cell.isPreFilled);
+                        // Draw cell background first
+                        drawCellBackground(rowIndex, colIndex, cell.isPreFilled);
 
-            if (cell.value && cell.value !== "") {
-            drawNumber(rowIndex, colIndex, parseInt(cell.value));
-            } else if (cell.candidates) {
-            drawCandidates(rowIndex, colIndex, cell.candidates.map(c => parseInt(c)));
-            }
-            }
-            }
+                        if (cell.value && cell.value !== "") {
+                            drawNumber(rowIndex, colIndex, parseInt(cell.value));
+                        } else if (cell.candidates) {
+                            drawCandidates(rowIndex, colIndex, cell.candidates.map(c => parseInt(c)));
+                        }
+                    }
+                }
             }
 
             // Initialize the grid
@@ -271,11 +251,8 @@
 
             window.next = () => {
                 let next = golang.next(JSON.stringify(currentPuzzleData));
-                //console.log(next);
                 loadSudokuPuzzle(JSON.parse(next));
             }
-
-
 
             // https://mdn.github.io/dom-examples/popover-api/toast-popovers/
             function makeToast(msg, type) {
