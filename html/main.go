@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"syscall/js"
 
 	"github.com/mvndaai/sudoku_hints/sudoku"
@@ -17,6 +18,7 @@ func main() {
 	m["random"] = getRandomBoard()
 	m["convertOCR"] = convertOCR()
 	m["next"] = next()
+	m["processOCR"] = processOCR()
 
 	js.Global().Set("golang", m)
 
@@ -86,5 +88,46 @@ func next() js.Func {
 			return err
 		}
 		return string(b)
+	})
+}
+
+func processOCR() js.Func { // If you have an http request it needs to return a promise
+	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		if len(args) != 2 {
+			return js.Global().Get("Promise").Call("reject", "Invalid number of arguments passed")
+		}
+
+		// Capture the original arguments from processOCR
+		filename := args[0].String()
+		jsBytes := args[1]
+
+		handler := js.FuncOf(func(this js.Value, args []js.Value) any {
+			resolve := args[0]
+			reject := args[1]
+
+			go func() {
+				// Use the captured arguments from the outer scope
+				length := jsBytes.Get("length").Int()
+				fileBytes := make([]byte, length)
+				js.CopyBytesToGo(fileBytes, jsBytes)
+
+				resp, err := sudoku.ProcessImage(RapidAPIKey, filename, fileBytes)
+				if err != nil {
+					reject.Invoke(err.Error())
+					return
+				}
+
+				pretty, err := json.Marshal(resp)
+				if err != nil {
+					reject.Invoke(fmt.Errorf("Could not marshal json: %w %v", err, resp))
+					return
+				}
+				resolve.Invoke(string(pretty))
+			}()
+
+			return nil
+		})
+
+		return js.Global().Get("Promise").New(handler)
 	})
 }

@@ -51,41 +51,45 @@
             document.getElementById('imageInput').click();
             });
 
-            document.getElementById('imageInput').addEventListener('change', function(event) {
+            // Utility: read a File and return Uint8Array bytes
+            async function fileToBytes(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const arrayBuffer = e.target.result;
+                        resolve(new Uint8Array(arrayBuffer));
+                    };
+                    reader.onerror = function(e) {
+                        reject(e);
+                    };
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+            document.getElementById('imageInput').addEventListener('change', async function(event) {
             const file = event.target.files[0];
             if (file) {
                 makeErrorToast(`Processing image: ${file.name}`);
-
-                // Convert file to base64 and send to API
-                const formData = new FormData();
-                formData.append('file', file);
-
-                fetch('https://sudoku-ocr.p.rapidapi.com/scan-puzzle', {
-                    method: 'POST',
-                    headers: {
-                    'x-rapidapi-host': 'sudoku-ocr.p.rapidapi.com',
-                    'x-rapidapi-key': golang.getKey()
-                    },
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
+                try {
+                    const bytes = await fileToBytes(file);
+                    const response = await golang.processOCR(file.name, bytes);
+                    console.log('Raw response:', response);
+                    const data = JSON.parse(response);
                     makeErrorToast('Image processed successfully!');
                     console.log('OCR Result:', data);
+                    //// Load the OCR result into the canvas
+                    //if (data && data.puzzle) {
+                    //    loadSudokuPuzzle(JSON.parse(golang.convertOCR(data)));
+                    //    selectedCell = null; // Clear any selected cell
+                    //}
 
-                    // Load the OCR result into the canvas
-                    if (data && data.puzzle) {
-                        loadSudokuPuzzle(JSON.parse(golang.convertOCR(data)));
-                        selectedCell = null; // Clear any selected cell
-                    }
-                    // You can process the OCR result here and update the puzzle
-                })
-                    .catch(error => {
-                        makeErrorToast('Error processing image: ' + error.message);
-                        console.error('Error:', error);
-                    });
+                    loadSudokuPuzzle(data);
+
+                } catch (error) {
+                    makeErrorToast('Error processing image: ' + error.message);
+                    console.error('Error:', error);
                 }
-                });
+            }
+            });
             const canvas = document.getElementById('sudokuCanvas');
             let selectedCell = null;
             let currentPuzzleData = null; // Initialize as null, will be set when examplePuzzle is available
@@ -252,7 +256,7 @@
                 drawSudokuGrid();
 
                 const random = JSON.parse(golang.random());
-                console.log(JSON.stringify(random));
+                //console.log(JSON.stringify(random));
 
                 loadSudokuPuzzle(random);
                 btns.forEach(btn => btn.disabled = false);
