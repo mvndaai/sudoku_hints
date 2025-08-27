@@ -111,15 +111,15 @@ func processOCR() js.Func { // If you have an http request it needs to return a 
 				fileBytes := make([]byte, length)
 				js.CopyBytesToGo(fileBytes, jsBytes)
 
-				resp, err := sudoku.ProcessImage(RapidAPIKey, filename, fileBytes)
+				g, err := sudoku.ProcessImage(RapidAPIKey, filename, fileBytes)
 				if err != nil {
 					reject.Invoke(err.Error())
 					return
 				}
 
-				pretty, err := json.Marshal(resp)
+				pretty, err := json.Marshal(g.Board)
 				if err != nil {
-					reject.Invoke(fmt.Errorf("Could not marshal json: %w %v", err, resp))
+					reject.Invoke(fmt.Errorf("Could not marshal json: %w %v", err, g))
 					return
 				}
 				resolve.Invoke(string(pretty))

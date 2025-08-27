@@ -56,6 +56,9 @@ func ProcessImage(key string, filename string, file []byte) (Game, error) {
 	}
 
 	g := Game{}
-	g.FillBasic(board)
+	err = g.FillBasic(board)
+	if err != nil {
+		return Game{}, err
+	}
 	return g, nil
 }

@@ -25,6 +25,9 @@
             .failure {
                 background: rgb(255, 100, 100);
             }
+            .success {
+                background: rgb(51, 201, 51);
+            }
             :popover-open {
                 position: absolute;
                 inset: unset;
@@ -68,14 +71,14 @@
             document.getElementById('imageInput').addEventListener('change', async function(event) {
             const file = event.target.files[0];
             if (file) {
-                makeErrorToast(`Processing image: ${file.name}`);
+                makeToast(`Processing image: ${file.name}`);
                 try {
                     const bytes = await fileToBytes(file);
                     const response = await golang.processOCR(file.name, bytes);
-                    console.log('Raw response:', response);
+                    //console.log('Raw response:', response);
                     const data = JSON.parse(response);
-                    makeErrorToast('Image processed successfully!');
-                    console.log('OCR Result:', data);
+                    makeToast('Image processed successfully!', 'success');
+                    //console.log('OCR Result:', data);
                     //// Load the OCR result into the canvas
                     //if (data && data.puzzle) {
                     //    loadSudokuPuzzle(JSON.parse(golang.convertOCR(data)));
@@ -85,7 +88,7 @@
                     loadSudokuPuzzle(data);
 
                 } catch (error) {
-                    makeErrorToast('Error processing image: ' + error.message);
+                    makeToast('Error processing image: ' + error.message, 'failure');
                     console.error('Error:', error);
                 }
             }
@@ -104,7 +107,7 @@
             const row = Math.floor(y / cellSize);
 
             if (row >= 0 && row < 9 && col >= 0 && col < 9) {
-                makeErrorToast(`Clicked cell at row ${row}, col ${col}`);
+                makeToast(`Clicked cell at row ${row}, col ${col}`);
 
                 const cell = currentPuzzleData[row][col].cell;
                 if (!cell.isPreFilled && (cell.value === "" || !cell.value)) {
@@ -125,7 +128,7 @@
             const key = event.key;
             if (/^[1-9]$/.test(key)) {
                 const number = parseInt(key);
-                makeErrorToast(`Input ${number} at row ${selectedCell.row}, col ${selectedCell.col}`);
+                makeToast(`Input ${number} at row ${selectedCell.row}, col ${selectedCell.col}`);
 
                 const cell = currentPuzzleData[selectedCell.row][selectedCell.col].cell;
 
@@ -223,6 +226,7 @@
             }
 
             function loadSudokuPuzzle(puzzleData) {
+                console.log('Loading puzzle data:', puzzleData);
                 currentPuzzleData = puzzleData;
             // TODO call the golang code to get the hints.
             drawSudokuGrid();
@@ -271,13 +275,13 @@
 
 
             // https://mdn.github.io/dom-examples/popover-api/toast-popovers/
-            function makeErrorToast(msg) {
+            function makeToast(msg, type) {
                 // Create an element and make it into a popover
                 const popover = document.createElement("article");
                 popover.popover = "manual";
                 popover.classList.add("toast");
                 popover.classList.add("newest");
-                popover.classList.add("failure");
+                popover.classList.add(type);
 
                 // Give the toast its text content, and add it to the DOM
                 popover.textContent = msg;
