@@ -46,6 +46,8 @@
             <button id="uploadBtn" style="margin: 10px; padding: 10px 20px; font-size: 16px;">
             📷 Upload Image or Take Photo
             </button>
+
+            <button onclick="next()" style="margin: 10px; padding: 10px 20px; font-size: 16px;">Next</button>
             <input type="file" id="imageInput" accept="image/*" capture="environment" style="display: none;">
         </div>
 
@@ -107,7 +109,7 @@
             const row = Math.floor(y / cellSize);
 
             if (row >= 0 && row < 9 && col >= 0 && col < 9) {
-                makeToast(`Clicked cell at row ${row}, col ${col}`);
+                //makeToast(`Clicked cell at row ${row}, col ${col}`);
 
                 const cell = currentPuzzleData[row][col].cell;
                 if (!cell.isPreFilled && (cell.value === "" || !cell.value)) {
@@ -128,7 +130,7 @@
             const key = event.key;
             if (/^[1-9]$/.test(key)) {
                 const number = parseInt(key);
-                makeToast(`Input ${number} at row ${selectedCell.row}, col ${selectedCell.col}`);
+                //makeToast(`Input ${number} at row ${selectedCell.row}, col ${selectedCell.col}`);
 
                 const cell = currentPuzzleData[selectedCell.row][selectedCell.col].cell;
 
