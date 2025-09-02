@@ -25,10 +25,11 @@ type (
 	}
 
 	Cell struct {
-		Value        string   `json:"value"`
-		Candidates   []string `json:"candidates"`
-		IsPreFilled  bool     `json:"isPreFilled"` // If true, this cell was part of the original puzzle and should not be changed
-		IsLastFilled bool     `json:"isLastFilled"`
+		Value            string   `json:"value"`
+		Candidates       []string `json:"candidates"`
+		IsPreFilled      bool     `json:"isPreFilled"` // If true, this cell was part of the original puzzle and should not be changed
+		IsLastFilled     bool     `json:"isLastFilled"`
+		RecentCandidates []string `json:"recentCandidates,omitempty"`
 	}
 
 	Game struct {
@@ -92,9 +93,9 @@ func (g *Game) Fill(cells [][]string, group map[Loc]int, symbols []string) error
 		}
 	}
 
-	err := g.EliminateCandidatesInit() // Initial elimination of candidates
+	err := g.RemoveAllSimple()
 	if err != nil {
-		return fmt.Errorf("failed to initialize candidates: %w", err)
+		return fmt.Errorf("failed to remove all simple candidates: %w", err)
 	}
 	return nil
 }
@@ -166,7 +167,17 @@ func (c *Cell) RemoveCandiates(vs []string) (removed []string) {
 		return false
 	})
 
+	c.RecentCandidates = append(c.RecentCandidates, removed...)
 	return removed
+}
+
+func (g *Game) RemoveAllRecentCandidates() {
+	for y := range g.Board {
+		for x := range g.Board[y] {
+			cell := g.Board[y][x].Cell
+			cell.RecentCandidates = nil
+		}
+	}
 }
 
 func (c *Cell) CandidateDiffs(vs []string) (removed []string) {

@@ -122,16 +122,3 @@ func (g *Game) EliminateCandidates(onlySimples bool) (change string, _ error) {
 	}
 	return "", fmt.Errorf("no candidates eliminated by any rules")
 }
-
-func (g *Game) EliminateCandidatesInit() error {
-	for {
-		change, err := g.EliminateCandidates(true)
-		if err != nil {
-			return fmt.Errorf("failed to eliminate candidates: %w", err)
-		}
-		if change != "" {
-			break
-		}
-	}
-	return nil
-}

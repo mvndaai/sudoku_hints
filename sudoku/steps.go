@@ -32,6 +32,7 @@ func (g *Game) RemoveAllSimple() error {
 			}
 		}
 	}
+	g.RemoveAllRecentCandidates()
 	return nil
 }
 
