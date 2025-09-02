@@ -42,6 +42,10 @@ func getRandomBoard() js.Func {
 		if err != nil {
 			return err
 		}
+		err = g.RemoveAllSimple()
+		if err != nil {
+			return err
+		}
 
 		b, err := json.Marshal(g.Board)
 		if err != nil {
@@ -61,6 +65,11 @@ func convertOCR() js.Func {
 
 		g := sudoku.Game{}
 		g.FillBasic(board)
+		err = g.RemoveAllSimple()
+		if err != nil {
+			return err
+		}
+
 		b, err := json.Marshal(g.Board)
 		if err != nil {
 			return err
@@ -112,6 +121,12 @@ func processOCR() js.Func { // If you have an http request it needs to return a 
 				js.CopyBytesToGo(fileBytes, jsBytes)
 
 				g, err := sudoku.ProcessImage(RapidAPIKey, filename, fileBytes)
+				if err != nil {
+					reject.Invoke(err.Error())
+					return
+				}
+
+				err = g.RemoveAllSimple()
 				if err != nil {
 					reject.Invoke(err.Error())
 					return

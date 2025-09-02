@@ -17,6 +17,13 @@ type (
 		Cell *Cell
 	}
 
+	Hint struct {
+		Loc                Loc      `json:"loc"`
+		CandidatesToRemove []string `json:"candidatesToRemove,omitempty"`
+		Eliminator         string   `json:"eliminator"`
+		cell               *Cell    `json:"-"`
+	}
+
 	Cell struct {
 		Value        string   `json:"value"`
 		Candidates   []string `json:"candidates"`
@@ -141,6 +148,28 @@ func (c *Cell) Set(v string) {
 }
 
 func (c *Cell) RemoveCandiates(vs []string) (removed []string) {
+	if c.Value != "" {
+		return nil // Cell is already filled, nothing to remove
+	}
+
+	// Remove empty vs values
+	vs = slices.DeleteFunc(vs, func(v string) bool {
+		return v == ""
+	})
+
+	removed = []string{}
+	c.Candidates = slices.DeleteFunc(c.Candidates, func(c string) bool {
+		if slices.Contains(vs, c) {
+			removed = append(removed, c)
+			return true
+		}
+		return false
+	})
+
+	return removed
+}
+
+func (c *Cell) CandidateDiffs(vs []string) (removed []string) {
 	if c.Value != "" {
 		return nil // Cell is already filled, nothing to remove
 	}

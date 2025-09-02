@@ -6,24 +6,49 @@ import (
 	"slices"
 )
 
-var EliminatorFilledCell = CandidateEliminator{
-	Name:        "Filled Cell",
-	Description: "Eliminates candidates in the same row as a filled cell.",
-	PartitionEliminator: func(cells []LocCell) (string, error) {
-		found := []string{}
-		for _, c := range cells {
-			found = append(found, c.Cell.Value)
+func fromBetterPartitionEliminator(bpe BetterPartitionEliminator) PartitionEliminator {
+	return func(cells []LocCell) (string, error) {
+		ok, h, err := bpe(cells)
+		if err != nil {
+			return "", err
 		}
-		for _, lc := range cells {
-			removed := lc.Cell.RemoveCandiates(found)
-			if len(removed) > 0 {
-				return fmt.Sprintf("removed candidates (x:%d,y:%d) %v", lc.Loc.X, lc.Loc.Y, removed), nil
-			}
+		if !ok {
+			return "", nil
 		}
-		return "", nil
-	},
-	Simple: true,
+		_ = h.cell.RemoveCandiates(h.CandidatesToRemove)
+		return fmt.Sprintf("removed candidates (x:%d,y:%d) %v", h.Loc.X, h.Loc.Y, h.CandidatesToRemove), nil
+	}
 }
+
+var EliminatorFilledCell = func() CandidateEliminator {
+	name := "Filled Cell"
+	r := CandidateEliminator{
+		Name:        name,
+		Description: "Eliminates candidates in the same row as a filled cell.",
+		BetterPartitionEliminator: func(cells []LocCell) (bool, Hint, error) {
+			found := []string{}
+			for _, c := range cells {
+				found = append(found, c.Cell.Value)
+			}
+			for _, lc := range cells {
+				diffs := lc.Cell.CandidateDiffs(found)
+				if len(diffs) > 0 {
+					return true, Hint{
+						Loc:                lc.Loc,
+						Eliminator:         name,
+						CandidatesToRemove: diffs,
+						cell:               lc.Cell,
+					}, nil
+				}
+			}
+			return false, Hint{}, nil
+		},
+		Simple: true,
+	}
+
+	r.PartitionEliminator = fromBetterPartitionEliminator(r.BetterPartitionEliminator)
+	return r
+}()
 
 type Locs []Loc
 
