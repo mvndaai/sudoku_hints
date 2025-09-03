@@ -157,7 +157,7 @@
                         // Set the cell as solved
                         cell.value = number.toString();
                         const puzzle = golang.setCell(selectedCell.row, selectedCell.col, number.toString());
-                        console.log(puzzle);
+                        //console.log(puzzle);
                         let parsedPuzzle;
                         try {
                             parsedPuzzle = JSON.parse(puzzle);
@@ -258,8 +258,11 @@
                 ctx.font = '10px Arial';
                 ctx.textAlign = 'center';
 
+                // Check if there's only one candidate
+                const isSingleCandidate = candidates.length === 1;
+
                 // Draw normal candidates
-                ctx.fillStyle = '#999';
+                ctx.fillStyle = isSingleCandidate ? '#008000' : '#999'; // green if single, gray otherwise
                 for (let i = 0; i < candidates.length && i < 9; i++) {
                     const candidateRow = Math.floor(i / 3);
                     const candidateCol = i % 3;
@@ -284,7 +287,7 @@
             }
 
             function loadSudokuPuzzle(puzzleData) {
-                console.log('Loading puzzle data:', puzzleData);
+                //console.log('Loading puzzle data:', puzzleData);
                 currentPuzzleData = puzzleData;
                 // TODO call the golang code to get the hints.
                 drawSudokuGrid();
@@ -335,7 +338,7 @@
             }
 
             document.querySelector("#requestDosukoBtn").addEventListener("click", async () => {
-                log.Println("in requestDosukoBtn click event");
+                //console.log("in requestDosukoBtn click event");
                 let puzzle = JSON.parse(await golang.requestDosuko());
                 makeToast(`Loaded Dosuko puzzle (Difficulty: ${puzzle.difficulty})`, "success");
                 loadSudokuPuzzle(puzzle.board);
