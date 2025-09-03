@@ -6,7 +6,7 @@ import (
 	"slices"
 )
 
-func fromBetterPartitionEliminator(bpe BetterPartitionEliminator) PartitionEliminator {
+func PartitionHinterToEliminator(bpe PartitionHinter) PartitionEliminator {
 	return func(cells []LocCell) (string, error) {
 		ok, h, err := bpe(cells)
 		if err != nil {
@@ -25,7 +25,7 @@ var EliminatorFilledCell = func() CandidateEliminator {
 	r := CandidateEliminator{
 		Name:        name,
 		Description: "Eliminates candidates in the same row as a filled cell.",
-		BetterPartitionEliminator: func(cells []LocCell) (bool, Hint, error) {
+		PartitionHinter: func(cells []LocCell) (bool, Hint, error) {
 			found := []string{}
 			for _, c := range cells {
 				found = append(found, c.Cell.Value)
@@ -46,7 +46,7 @@ var EliminatorFilledCell = func() CandidateEliminator {
 		Simple: true,
 	}
 
-	r.PartitionEliminator = fromBetterPartitionEliminator(r.BetterPartitionEliminator)
+	r.PartitionEliminator = PartitionHinterToEliminator(r.PartitionHinter)
 	return r
 }()
 

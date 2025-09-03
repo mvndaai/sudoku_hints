@@ -7,18 +7,22 @@ import (
 )
 
 type (
-	PartitionEliminator       func([]LocCell) (change string, _ error)
-	BetterPartitionEliminator func([]LocCell) (bool, Hint, error)
-	GameEliminator            func(*Game) (change string, _ error)
+	PartitionEliminator func([]LocCell) (change string, _ error)
+	GameEliminator      func(*Game) (change string, _ error)
+
+	PartitionHinter func([]LocCell) (bool, Hint, error)
+	GameHinter      func(*Game) (bool, Hint, error)
 )
 
 type CandidateEliminator struct {
-	Name                      string
-	Description               string
-	PartitionEliminator       PartitionEliminator
-	BetterPartitionEliminator BetterPartitionEliminator
-	GameEliminator            GameEliminator
-	Simple                    bool // Allow hiding simple eliminators from the UI
+	Name                string
+	Description         string
+	PartitionEliminator PartitionEliminator
+	GameEliminator      GameEliminator
+	Simple              bool // Allow hiding simple eliminators from the UI
+
+	PartitionHinter PartitionHinter
+	GameHinter      GameHinter
 }
 
 // Rules is a collection of rules that can be applied to a Sudoku game.

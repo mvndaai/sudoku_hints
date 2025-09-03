@@ -19,7 +19,7 @@ func (g *Game) RemoveAllSimple(clearRecentCandidates bool) error {
 	for _, ps := range partitions {
 		for i := range ps.cells {
 			for {
-				ok, hint, err := eliminator.BetterPartitionEliminator(ps.cells[i])
+				ok, hint, err := eliminator.PartitionHinter(ps.cells[i])
 				if err != nil {
 					return fmt.Errorf("(%s) %s %d: %w", hint.Eliminator, ps.name, i, err)
 				}
@@ -41,8 +41,43 @@ func (g *Game) RemoveAllSimple(clearRecentCandidates bool) error {
 	return nil
 }
 
-func NextHint(g *Game, eliminators []string) (bool, Hint, error) {
+func NextHint(g *Game, eliminators []string) (Hint, error) {
+	rows, cols, groups := g.GetSectionedCells()
 
-	// Get the next hint from the game state
-	return false, Hint{}, nil
+	for _, eliminator := range Eliminators {
+		if eliminator.PartitionEliminator != nil {
+			partitions := []struct {
+				name  string
+				cells [][]LocCell
+			}{
+				{"rows", rows},
+				{"cols", cols},
+				{"groups", groups},
+			}
+
+			for _, ps := range partitions {
+				for i, cells := range ps.cells {
+					change, err := eliminator.PartitionEliminator(cells)
+					if err != nil {
+						//return "", fmt.Errorf("(%s) %s %d: %w", eliminator.Name, ps.name, i, err)
+						return Hint{}, fmt.Errorf("(%s) %s %d: %w", eliminator.Name, ps.name, i, err)
+					}
+					if change != "" {
+						//return fmt.Sprintf("(%s) %s %d: %s", eliminator.Name, ps.name, i, change), nil
+					}
+				}
+			}
+		}
+		if eliminator.GameEliminator != nil {
+			change, err := eliminator.GameEliminator(g)
+			if err != nil {
+				return Hint{}, fmt.Errorf("(%s): %w", eliminator.Name, err)
+			}
+			if change != "" {
+				//return fmt.Sprintf("(%s): %s", eliminator.Name, change), nil
+				return Hint{}, nil
+			}
+		}
+	}
+	return Hint{}, fmt.Errorf("no candidates eliminated by any rules")
 }
