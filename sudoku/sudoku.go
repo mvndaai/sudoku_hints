@@ -36,6 +36,7 @@ type (
 	Game struct {
 		Symbols []string        `json:"symbols"`
 		Board   [][]GroupedCell `json:"board"`
+		Solved  bool            `json:"solved"`
 
 		// Used only in bash
 		HideSimple        bool
@@ -152,7 +153,7 @@ func (c *Cell) Set(v string) {
 }
 
 func (c *Cell) RemoveCandiates(vs []string) (removed []string) {
-	log.Println("in remove Candidates", vs)
+	//log.Println("in remove Candidates", vs)
 	if c.Value != "" {
 		return nil // Cell is already filled, nothing to remove
 	}
@@ -163,19 +164,19 @@ func (c *Cell) RemoveCandiates(vs []string) (removed []string) {
 	})
 
 	removed = []string{}
-	log.Println(c.Candidates)
+	//log.Println(c.Candidates)
 	c.Candidates = slices.DeleteFunc(c.Candidates, func(c string) bool {
 		if slices.Contains(vs, c) {
 			removed = append(removed, c)
-			log.Println("hello")
+			//log.Println("hello")
 			return true
 		}
 		return false
 	})
-	log.Println(c.Candidates)
+	//log.Println(c.Candidates)
 
 	if len(removed) != 0 {
-		log.Println(c, "removed candidates:", removed)
+		//log.Println(c, "removed candidates:", removed)
 		c.RecentCandidates = append(c.RecentCandidates, removed...)
 	}
 	return removed
@@ -237,7 +238,7 @@ func (g *Game) SetLastFilled(x, y int) {
 	}
 }
 
-func (g *Game) SetValue(row, col int, value string) {
+func (g *Game) SetValue(row, col int, value string) error {
 	for iy := range g.Board {
 		for jx := range g.Board[iy] {
 			cell := g.Board[iy][jx].Cell
@@ -249,6 +250,9 @@ func (g *Game) SetValue(row, col int, value string) {
 			cell.IsLastFilled = false
 		}
 	}
+
+	g.Solved = g.Won()
+	return g.BadBoard()
 }
 
 func (g *Game) Won() bool {
@@ -281,6 +285,11 @@ func (g *Game) BadBoard() error {
 			singleCandidates := make(map[string][]Loc)
 
 			for _, lc := range cells {
+				log.Println("Checking cell:", lc.Loc, lc.Cell.Value, len(lc.Cell.Candidates))
+				if lc.Cell.Value == "" && len(lc.Cell.Candidates) == 0 {
+					return fmt.Errorf("empty cell with no candidates: %v", lc.Loc)
+				}
+
 				if lc.Cell.Value != "" {
 					values[lc.Cell.Value] = append(values[lc.Cell.Value], lc.Loc)
 				} else if len(lc.Cell.Candidates) == 1 {

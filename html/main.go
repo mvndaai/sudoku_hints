@@ -117,8 +117,11 @@ func setCell() js.Func {
 		row := args[0].Int()
 		col := args[1].Int()
 		value := args[2].String()
-		currentGame.SetValue(row, col, value)
-		err := currentGame.RemoveAllSimple(false)
+		err := currentGame.SetValue(row, col, value)
+		if err != nil {
+			return err
+		}
+		err = currentGame.RemoveAllSimple(false)
 		if err != nil {
 			return fmt.Errorf("failed to remove all simple candidates: %w", err)
 		}

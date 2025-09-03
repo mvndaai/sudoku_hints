@@ -121,8 +121,21 @@
                     if (cell.candidates && cell.candidates.includes(number.toString())) {
                         // Set the cell as solved
                         cell.value = number.toString();
-                        let puzzle = golang.setCell(selectedCell.row, selectedCell.col, number.toString())
-                        redrawPuzzle(JSON.parse(puzzle).board);
+                        const puzzle = golang.setCell(selectedCell.row, selectedCell.col, number.toString());
+                        console.log(puzzle);
+                        let parsedPuzzle;
+                        try {
+                            parsedPuzzle = JSON.parse(puzzle);
+                        } catch (error) {
+                            makeToast('Error parsing puzzle response: ' + error.message + puzzle, 'failure');
+                            console.error('JSON parse error:', error, 'Response:', puzzle);
+                            return;
+                        }
+
+                        if (parsedPuzzle.solved) {
+                            makeToast('Puzzle solved!', 'success');
+                        }
+                        redrawPuzzle(parsedPuzzle.board);
                     }
                 } else if (key === 'Delete' || key === 'Backspace') {
                     const cell = currentPuzzleData[selectedCell.row][selectedCell.col].cell;
@@ -203,20 +216,35 @@
                 ctx.fillText(number, x, y);
             }
 
-            function drawCandidates(row, col, candidates) {
+            function drawCandidates(row, col, candidates, recentCandidates) {
                 const cellX = col * cellSize;
                 const cellY = row * cellSize;
 
                 ctx.font = '10px Arial';
-                ctx.fillStyle = '#999';
                 ctx.textAlign = 'center';
 
+                // Draw normal candidates
+                ctx.fillStyle = '#999';
                 for (let i = 0; i < candidates.length && i < 9; i++) {
                     const candidateRow = Math.floor(i / 3);
                     const candidateCol = i % 3;
                     const x = cellX + 8 + candidateCol * 11;
                     const y = cellY + 12 + candidateRow * 11;
                     ctx.fillText(candidates[i], x, y);
+                }
+
+                // Draw recent candidates in a different color (overlay)
+                if (recentCandidates && recentCandidates.length > 0) {
+                    ctx.save();
+                    ctx.fillStyle = '#b20000'; // dark red
+                    for (let i = 0; i < recentCandidates.length && i < 9; i++) {
+                        const candidateRow = Math.floor(i / 3);
+                        const candidateCol = i % 3;
+                        const x = cellX + 8 + candidateCol * 11;
+                        const y = cellY + 12 + candidateRow * 11;
+                        ctx.fillText(recentCandidates[i], x, y);
+                    }
+                    ctx.restore();
                 }
             }
 
@@ -237,13 +265,12 @@
                         if (cell.value && cell.value !== "") {
                             drawNumber(rowIndex, colIndex, parseInt(cell.value));
                         } else if (cell.candidates) {
-                            drawCandidates(rowIndex, colIndex, cell.candidates.map(c => parseInt(c)));
-                            if (cell.recentCandidates && cell.recentCandidates.length > 0) {
-                                ctx.save();
-                                ctx.fillStyle = '#b20000'; // dark red
-                                drawCandidates(rowIndex, colIndex, cell.recentCandidates.map(c => parseInt(c)));
-                                ctx.restore();
-                            }
+                            drawCandidates(
+                                rowIndex,
+                                colIndex,
+                                cell.candidates.map(c => parseInt(c)),
+                                cell.recentCandidates ? cell.recentCandidates.map(c => parseInt(c)) : []
+                            );
                         }
                     }
                 }

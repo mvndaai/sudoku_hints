@@ -3,7 +3,6 @@ package sudoku
 import (
 	"bytes"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 )
@@ -47,8 +46,8 @@ func ProcessImage(key string, filename string, file []byte) (Game, error) {
 	}
 
 	//log.Println("key", key)
-	log.Println("Response Status:", resp.Status)
-	log.Println("Response Body:", string(responseBody))
+	//log.Println("Response Status:", resp.Status)
+	//log.Println("Response Body:", string(responseBody))
 
 	board, err := ConvertFromOCRFormat(string(responseBody))
 	if err != nil {
