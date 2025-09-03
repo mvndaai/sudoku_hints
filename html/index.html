@@ -105,6 +105,37 @@
                     if (!cell.isPreFilled && (cell.value === "" || !cell.value)) {
                         selectedCell = { row, col };
                         canvas.focus();
+
+                        // TOOD check if this works
+                        // Create a hidden input to trigger mobile keyboard
+                        let hiddenInput = document.getElementById('hiddenNumberInput');
+                        if (!hiddenInput) {
+                            hiddenInput = document.createElement('input');
+                            hiddenInput.id = 'hiddenNumberInput';
+                            hiddenInput.type = 'number';
+                            hiddenInput.inputMode = 'numeric';
+                            hiddenInput.pattern = '[1-9]';
+                            hiddenInput.min = '1';
+                            hiddenInput.max = '9';
+                            hiddenInput.style.position = 'absolute';
+                            hiddenInput.style.left = '-9999px';
+                            hiddenInput.style.width = '1px';
+                            hiddenInput.style.height = '1px';
+                            document.body.appendChild(hiddenInput);
+
+                            // Handle input from the hidden field
+                            hiddenInput.addEventListener('input', function(e) {
+                                const value = e.target.value;
+                                if (/^[1-9]$/.test(value) && selectedCell) {
+                                    const evt = new KeyboardEvent('keydown', { key: value });
+                                    canvas.dispatchEvent(evt);
+                                    e.target.value = '';
+                                }
+                            });
+                        }
+
+                        // Focus the hidden input to open keyboard
+                        hiddenInput.focus();
                     } else {
                         selectedCell = null;
                     }
@@ -304,6 +335,7 @@
             }
 
             document.querySelector("#requestDosukoBtn").addEventListener("click", async () => {
+                log.Println("in requestDosukoBtn click event");
                 let puzzle = JSON.parse(await golang.requestDosuko());
                 makeToast(`Loaded Dosuko puzzle (Difficulty: ${puzzle.difficulty})`, "success");
                 loadSudokuPuzzle(puzzle.board);
