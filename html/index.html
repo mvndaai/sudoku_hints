@@ -47,6 +47,10 @@
             📷 Upload Image or Take Photo
             </button>
 
+            <button id="requestDosukoBtn" style="margin: 10px; padding: 10px 20px; font-size: 16px;">
+                🧩 Request Dosuko Puzzle
+            </button>
+
             <button onclick="next()" style="margin: 10px; padding: 10px 20px; font-size: 16px;">Next</button>
             <!--<input type="file" id="imageInput" accept="image/*" capture="environment" style="display: none;">-->
             <input type="file" id="imageInput" accept="image/*;capture=camera" style="display: none;">
@@ -298,6 +302,12 @@
                 let next = golang.next(JSON.stringify(currentPuzzleData));
                 loadSudokuPuzzle(JSON.parse(next));
             }
+
+            document.querySelector("#requestDosukoBtn").addEventListener("click", async () => {
+                let puzzle = JSON.parse(await golang.requestDosuko());
+                makeToast(`Loaded Dosuko puzzle (Difficulty: ${puzzle.difficulty})`, "success");
+                loadSudokuPuzzle(puzzle.board);
+            });
 
             // https://mdn.github.io/dom-examples/popover-api/toast-popovers/
             function makeToast(msg, type) {

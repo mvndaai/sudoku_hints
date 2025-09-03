@@ -2,7 +2,6 @@ package sudoku
 
 import (
 	"fmt"
-	"log"
 	"slices"
 	"strconv"
 )
@@ -34,9 +33,10 @@ type (
 	}
 
 	Game struct {
-		Symbols []string        `json:"symbols"`
-		Board   [][]GroupedCell `json:"board"`
-		Solved  bool            `json:"solved"`
+		Symbols    []string        `json:"symbols"`
+		Board      [][]GroupedCell `json:"board"`
+		Solved     bool            `json:"solved"`
+		Difficulty string          `json:"difficulty,omitempty"`
 
 		// Used only in bash
 		HideSimple        bool
@@ -285,7 +285,7 @@ func (g *Game) BadBoard() error {
 			singleCandidates := make(map[string][]Loc)
 
 			for _, lc := range cells {
-				log.Println("Checking cell:", lc.Loc, lc.Cell.Value, len(lc.Cell.Candidates))
+				//log.Println("Checking cell:", lc.Loc, lc.Cell.Value, len(lc.Cell.Candidates), lc.Cell.Candidates)
 				if lc.Cell.Value == "" && len(lc.Cell.Candidates) == 0 {
 					return fmt.Errorf("empty cell with no candidates: %v", lc.Loc)
 				}

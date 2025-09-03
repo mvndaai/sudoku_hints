@@ -22,6 +22,7 @@ func main() {
 	m["processOCR"] = processOCR()
 	m["currentGame"] = getCurrentGame()
 	m["setCell"] = setCell()
+	m["requestDosuko"] = requestDosuko()
 
 	js.Global().Set("golang", m)
 
@@ -179,6 +180,37 @@ func processOCR() js.Func { // If you have an http request it needs to return a 
 				js.CopyBytesToGo(fileBytes, jsBytes)
 
 				g, err := sudoku.ProcessImage(RapidAPIKey, filename, fileBytes)
+				if err != nil {
+					reject.Invoke(err.Error())
+					return
+				}
+				setCurrentGame(&g)
+
+				pretty, err := json.Marshal(currentGame)
+				if err != nil {
+					reject.Invoke(fmt.Errorf("Could not marshal json: %w %v", err, g))
+					return
+				}
+
+				resolve.Invoke(string(pretty))
+			}()
+
+			return nil
+		})
+
+		return js.Global().Get("Promise").New(handler)
+	})
+}
+
+func requestDosuko() js.Func { // If you have an http request it needs to return a promise
+	return js.FuncOf(func(this js.Value, args []js.Value) any {
+
+		handler := js.FuncOf(func(this js.Value, args []js.Value) any {
+			resolve := args[0]
+			reject := args[1]
+
+			go func() {
+				g, err := sudoku.RequestDosukoPuzzle()
 				if err != nil {
 					reject.Invoke(err.Error())
 					return
