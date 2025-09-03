@@ -2,6 +2,7 @@ package sudoku
 
 import (
 	"fmt"
+	"log"
 	"slices"
 	"strconv"
 )
@@ -29,12 +30,14 @@ type (
 		Candidates       []string `json:"candidates"`
 		IsPreFilled      bool     `json:"isPreFilled"` // If true, this cell was part of the original puzzle and should not be changed
 		IsLastFilled     bool     `json:"isLastFilled"`
-		RecentCandidates []string `json:"recentCandidates,omitempty"`
+		RecentCandidates []string `json:"recentCandidates"`
 	}
 
 	Game struct {
-		Symbols           []string
-		Board             [][]GroupedCell
+		Symbols []string        `json:"symbols"`
+		Board   [][]GroupedCell `json:"board"`
+
+		// Used only in bash
 		HideSimple        bool
 		RandomEliminators bool // If true, the eliminators will be run in a random order
 		RunSimpleFirst    bool // If true, the simple eliminators will be run quietly first
@@ -93,7 +96,7 @@ func (g *Game) Fill(cells [][]string, group map[Loc]int, symbols []string) error
 		}
 	}
 
-	err := g.RemoveAllSimple()
+	err := g.RemoveAllSimple(true)
 	if err != nil {
 		return fmt.Errorf("failed to remove all simple candidates: %w", err)
 	}
@@ -149,6 +152,7 @@ func (c *Cell) Set(v string) {
 }
 
 func (c *Cell) RemoveCandiates(vs []string) (removed []string) {
+	log.Println("in remove Candidates", vs)
 	if c.Value != "" {
 		return nil // Cell is already filled, nothing to remove
 	}
@@ -159,26 +163,32 @@ func (c *Cell) RemoveCandiates(vs []string) (removed []string) {
 	})
 
 	removed = []string{}
+	log.Println(c.Candidates)
 	c.Candidates = slices.DeleteFunc(c.Candidates, func(c string) bool {
 		if slices.Contains(vs, c) {
 			removed = append(removed, c)
+			log.Println("hello")
 			return true
 		}
 		return false
 	})
+	log.Println(c.Candidates)
 
-	c.RecentCandidates = append(c.RecentCandidates, removed...)
+	if len(removed) != 0 {
+		log.Println(c, "removed candidates:", removed)
+		c.RecentCandidates = append(c.RecentCandidates, removed...)
+	}
 	return removed
 }
 
-func (g *Game) RemoveAllRecentCandidates() {
-	for y := range g.Board {
-		for x := range g.Board[y] {
-			cell := g.Board[y][x].Cell
-			cell.RecentCandidates = nil
-		}
-	}
-}
+//func (g *Game) RemoveAllRecentCandidates() {
+//	for y := range g.Board {
+//		for x := range g.Board[y] {
+//			cell := g.Board[y][x].Cell
+//			cell.RecentCandidates = nil
+//		}
+//	}
+//}
 
 func (c *Cell) CandidateDiffs(vs []string) (removed []string) {
 	if c.Value != "" {
@@ -220,6 +230,20 @@ func (g *Game) SetLastFilled(x, y int) {
 			cell := g.Board[iy][jx].Cell
 			if iy == y && jx == x {
 				cell.IsLastFilled = true
+				continue
+			}
+			cell.IsLastFilled = false
+		}
+	}
+}
+
+func (g *Game) SetValue(row, col int, value string) {
+	for iy := range g.Board {
+		for jx := range g.Board[iy] {
+			cell := g.Board[iy][jx].Cell
+			if iy == row && jx == col {
+				cell.IsLastFilled = true
+				cell.Value = value
 				continue
 			}
 			cell.IsLastFilled = false

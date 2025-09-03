@@ -2,10 +2,9 @@ package sudoku
 
 import (
 	"fmt"
-	"log"
 )
 
-func (g *Game) RemoveAllSimple() error {
+func (g *Game) RemoveAllSimple(clearRecentCandidates bool) error {
 	eliminator := EliminatorFilledCell
 	rows, cols, groups := g.GetSectionedCells()
 	partitions := []struct {
@@ -18,21 +17,27 @@ func (g *Game) RemoveAllSimple() error {
 	}
 
 	for _, ps := range partitions {
-		for i, cells := range ps.cells {
+		for i := range ps.cells {
 			for {
-				ok, hint, err := eliminator.BetterPartitionEliminator(cells)
+				ok, hint, err := eliminator.BetterPartitionEliminator(ps.cells[i])
 				if err != nil {
 					return fmt.Errorf("(%s) %s %d: %w", hint.Eliminator, ps.name, i, err)
 				}
 				if !ok {
-					log.Println(cells, "no change")
+					//log.Println(cells, "no change")
 					break
 				}
+
+				//log.Println("Removed candidates:", hint.CandidatesToRemove)
 				_ = hint.cell.RemoveCandiates(hint.CandidatesToRemove)
+				//log.Println("After:", hint.cell.RecentCandidates)
 			}
 		}
 	}
-	g.RemoveAllRecentCandidates()
+
+	//if clearRecentCandidates {
+	//	g.RemoveAllRecentCandidates()
+	//}
 	return nil
 }
 

@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 	"syscall/js"
 
 	"github.com/mvndaai/sudoku_hints/sudoku"
@@ -19,6 +20,8 @@ func main() {
 	m["convertOCR"] = convertOCR()
 	m["next"] = next()
 	m["processOCR"] = processOCR()
+	m["currentGame"] = getCurrentGame()
+	m["setCell"] = setCell()
 
 	js.Global().Set("golang", m)
 
@@ -28,6 +31,15 @@ func main() {
 
 // RapidAPIKey is set via build flag: -ldflags "-X 'main.RapidAPIKey=YOUR_KEY'"
 var RapidAPIKey string
+
+var currentGame *sudoku.Game
+var currentGameMutex = &sync.Mutex{}
+
+func setCurrentGame(g *sudoku.Game) {
+	currentGameMutex.Lock()
+	defer currentGameMutex.Unlock()
+	currentGame = g
+}
 
 func getKey() js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
@@ -42,11 +54,13 @@ func getRandomBoard() js.Func {
 		if err != nil {
 			return err
 		}
+		setCurrentGame(&g)
 
 		b, err := json.Marshal(g.Board)
 		if err != nil {
 			return err
 		}
+
 		return string(b)
 	})
 }
@@ -63,8 +77,53 @@ func convertOCR() js.Func {
 		if err != nil {
 			return err
 		}
+		setCurrentGame(&g)
 
-		b, err := json.Marshal(g.Board)
+		b, err := json.Marshal(currentGame)
+		if err != nil {
+			return err
+		}
+
+		return string(b)
+	})
+}
+
+func getCurrentGame() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		currentGameMutex.Lock()
+		defer currentGameMutex.Unlock()
+
+		b, err := json.Marshal(currentGame)
+		if err != nil {
+			return err
+		}
+
+		return string(b)
+	})
+}
+
+func setCell() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		currentGameMutex.Lock()
+		defer currentGameMutex.Unlock()
+		if currentGame == nil {
+			return "No current game"
+		}
+
+		if len(args) < 3 {
+			return "Insufficient arguments"
+		}
+
+		row := args[0].Int()
+		col := args[1].Int()
+		value := args[2].String()
+		currentGame.SetValue(row, col, value)
+		err := currentGame.RemoveAllSimple(false)
+		if err != nil {
+			return fmt.Errorf("failed to remove all simple candidates: %w", err)
+		}
+
+		b, err := json.Marshal(currentGame)
 		if err != nil {
 			return err
 		}
@@ -85,11 +144,13 @@ func next() js.Func {
 		g.RunOnce = true
 
 		g.StepThroughJavascript(nil)
+		setCurrentGame(&g)
 
-		b, err := json.Marshal(g.Board)
+		b, err := json.Marshal(currentGame)
 		if err != nil {
 			return err
 		}
+
 		return string(b)
 	})
 }
@@ -119,12 +180,14 @@ func processOCR() js.Func { // If you have an http request it needs to return a 
 					reject.Invoke(err.Error())
 					return
 				}
+				setCurrentGame(&g)
 
-				pretty, err := json.Marshal(g.Board)
+				pretty, err := json.Marshal(currentGame)
 				if err != nil {
 					reject.Invoke(fmt.Errorf("Could not marshal json: %w %v", err, g))
 					return
 				}
+
 				resolve.Invoke(string(pretty))
 			}()
 

@@ -121,13 +121,15 @@
                     if (cell.candidates && cell.candidates.includes(number.toString())) {
                         // Set the cell as solved
                         cell.value = number.toString();
-                        redrawPuzzle();
+                        let puzzle = golang.setCell(selectedCell.row, selectedCell.col, number.toString())
+                        redrawPuzzle(JSON.parse(puzzle).board);
                     }
                 } else if (key === 'Delete' || key === 'Backspace') {
                     const cell = currentPuzzleData[selectedCell.row][selectedCell.col].cell;
                     if (cell.value && cell.value !== "" && !cell.isPreFilled) {
                         // Convert back to unsolved with original candidates
                         cell.value = "";
+                        // TODO fix the revert with golang
                         redrawPuzzle();
                     }
                 }
@@ -145,9 +147,20 @@
                 ctx.lineWidth = 3;
                 ctx.strokeRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
             }
-            function redrawPuzzle() {
+            function redrawPuzzle(puzzle) {
+                if (puzzle) {
+                    loadSudokuPuzzle(puzzle);
+                    drawSelectedCell();
+                    return
+                }
+
                 if (currentPuzzleData) {
-                    loadSudokuPuzzle(currentPuzzleData);
+                    //console.log("redraw current", currentPuzzleData)
+                    let golangPuzzle = JSON.parse(golang.currentGame()).board;
+                    //console.log("redraw golang", golangPuzzle)
+
+                    //loadSudokuPuzzle(currentPuzzleData);
+                    loadSudokuPuzzle(golangPuzzle);
                     drawSelectedCell();
                 }
             }
@@ -225,6 +238,12 @@
                             drawNumber(rowIndex, colIndex, parseInt(cell.value));
                         } else if (cell.candidates) {
                             drawCandidates(rowIndex, colIndex, cell.candidates.map(c => parseInt(c)));
+                            if (cell.recentCandidates && cell.recentCandidates.length > 0) {
+                                ctx.save();
+                                ctx.fillStyle = '#b20000'; // dark red
+                                drawCandidates(rowIndex, colIndex, cell.recentCandidates.map(c => parseInt(c)));
+                                ctx.restore();
+                            }
                         }
                     }
                 }
