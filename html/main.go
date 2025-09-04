@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"sync"
 	"syscall/js"
 
@@ -211,6 +212,49 @@ func requestDosuko() js.Func { // If you have an http request it needs to return
 
 			go func() {
 				g, err := sudoku.RequestDosukoPuzzle()
+				if err != nil {
+					reject.Invoke(err.Error())
+					return
+				}
+				setCurrentGame(&g)
+
+				pretty, err := json.Marshal(currentGame)
+				if err != nil {
+					reject.Invoke(fmt.Errorf("Could not marshal json: %w %v", err, g))
+					return
+				}
+
+				resolve.Invoke(string(pretty))
+			}()
+
+			return nil
+		})
+
+		return js.Global().Get("Promise").New(handler)
+	})
+}
+
+func requestYouDoSudoku() js.Func { // If you have an http request it needs to return a promise
+	log.Println("in requestYouDoSudoku()")
+	return js.FuncOf(func(this js.Value, args []js.Value) any {
+
+		difficulty := ""
+		if len(args) > 0 {
+			difficulty = args[0].String()
+		}
+		switch difficulty {
+		case "easy", "medium", "hard":
+			// Handle easy difficulty
+		default:
+			difficulty = "medium"
+		}
+
+		handler := js.FuncOf(func(this js.Value, args []js.Value) any {
+			resolve := args[0]
+			reject := args[1]
+
+			go func() {
+				g, err := sudoku.RequestYouDoSudokuPuzzle(difficulty)
 				if err != nil {
 					reject.Invoke(err.Error())
 					return
