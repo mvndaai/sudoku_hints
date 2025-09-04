@@ -51,10 +51,6 @@
                 🧩 Request Dosuko Puzzle
             </button>
 
-            <button id="requestYouDoSudokuBtn" style="margin: 10px; padding: 10px 20px; font-size: 16px;">
-                🧩 Request YouDoSudoku Puzzle
-            </button>
-
             <button onclick="next()" style="margin: 10px; padding: 10px 20px; font-size: 16px;">Next</button>
             <!--<input type="file" id="imageInput" accept="image/*" capture="environment" style="display: none;">-->
             <input type="file" id="imageInput" accept="image/*;capture=camera" style="display: none;">
@@ -345,13 +341,6 @@
                 //console.log("in requestDosukoBtn click event");
                 let puzzle = JSON.parse(await golang.requestDosuko());
                 makeToast(`Loaded Dosuko puzzle (Difficulty: ${puzzle.difficulty})`, "success");
-                loadSudokuPuzzle(puzzle.board);
-            });
-
-            document.querySelector("#requestYouDoSudokuBtn").addEventListener("click", async () => {
-                //console.log("in requestYouDoSudokuBtn click event");
-                let puzzle = JSON.parse(await golang.requestYouDoSudoku());
-                makeToast(`Loaded YouDoSudoku puzzle (Difficulty: ${puzzle.difficulty})`, "success");
                 loadSudokuPuzzle(puzzle.board);
             });
 

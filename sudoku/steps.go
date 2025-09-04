@@ -2,9 +2,12 @@ package sudoku
 
 import (
 	"fmt"
+	"log"
+	"slices"
 )
 
 func (g *Game) RemoveAllSimple(clearRecentCandidates bool) error {
+	log.Println("in RemoveAllSimple")
 	eliminator := EliminatorFilledCell
 	rows, cols, groups := g.GetSectionedCells()
 	partitions := []struct {
@@ -28,9 +31,13 @@ func (g *Game) RemoveAllSimple(clearRecentCandidates bool) error {
 					break
 				}
 
-				//log.Println("Removed candidates:", hint.CandidatesToRemove)
-				_ = hint.cell.RemoveCandiates(hint.CandidatesToRemove)
-				//log.Println("After:", hint.cell.RecentCandidates)
+				bfCandidates := slices.Clone(hint.cell.Candidates)
+				bfRecentCandidates := slices.Clone(hint.cell.RecentCandidates)
+				removed := hint.cell.RemoveCandiates(hint.CandidatesToRemove)
+				if len(removed) != 0 {
+					log.Println("Removed candidates:", hint.CandidatesToRemove, bfCandidates, bfRecentCandidates)
+					log.Println("After:", hint.cell.Candidates, hint.cell.RecentCandidates)
+				}
 			}
 		}
 	}
