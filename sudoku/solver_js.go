@@ -3,7 +3,10 @@
 
 package sudoku
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 type writeFlusher struct {
 	io.Writer
@@ -26,5 +29,18 @@ func (g *Game) StepThroughJavascript(w io.Writer) {
 	}
 	writer := &writeFlusher{w}
 	scanner := &noOpScanner{}
+	g.RunOnce = true
 	g.StepThrough(writer, scanner)
+}
+
+func Next(g *Game, eliminators []string) error {
+	g.RemoveAllRecentCandidates()
+
+	err := g.RemoveAllSimple(false)
+	if err != nil {
+		return fmt.Errorf("failed to remove all simple candidates: %w", err)
+	}
+
+	g.StepThroughJavascript(nil)
+	return nil
 }

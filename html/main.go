@@ -6,7 +6,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 	"syscall/js"
 
@@ -45,11 +44,13 @@ func setCurrentGame(g *sudoku.Game) {
 
 func getKey() js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		//log.Println("in getKey()")
 		return RapidAPIKey
 	})
 }
 
 func getRandomBoard() js.Func {
+	//log.Println("in getRandomBoard()")
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
 		g := sudoku.Game{}
 		err := g.FillBasic(boards.RandomBasicBoard())
@@ -69,6 +70,7 @@ func getRandomBoard() js.Func {
 
 func convertOCR() js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		//log.Println("in convertOCR()")
 		board, err := sudoku.ConvertFromOCRFormat(args[0].String())
 		if err != nil {
 			return err
@@ -92,6 +94,7 @@ func convertOCR() js.Func {
 
 func getCurrentGame() js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		//log.Println("in getCurrentGame()")
 		currentGameMutex.Lock()
 		defer currentGameMutex.Unlock()
 
@@ -106,6 +109,7 @@ func getCurrentGame() js.Func {
 
 func setCell() js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		//log.Println("in setCell()")
 		currentGameMutex.Lock()
 		defer currentGameMutex.Unlock()
 		if currentGame == nil {
@@ -138,18 +142,7 @@ func setCell() js.Func {
 
 func next() js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
-		board := [][]sudoku.GroupedCell{}
-		err := json.Unmarshal([]byte(args[0].String()), &board)
-		if err != nil {
-			return err
-		}
-
-		g := sudoku.Game{}
-		g.FillBoard(board)
-		g.RunOnce = true
-
-		g.StepThroughJavascript(nil)
-		setCurrentGame(&g)
+		currentGame.StepThroughJavascript(nil)
 
 		b, err := json.Marshal(currentGame)
 		if err != nil {
@@ -162,6 +155,7 @@ func next() js.Func {
 
 func processOCR() js.Func { // If you have an http request it needs to return a promise
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		//log.Println("in processOCR()")
 		if len(args) != 2 {
 			return js.Global().Get("Promise").Call("reject", "Invalid number of arguments passed")
 		}
@@ -204,6 +198,7 @@ func processOCR() js.Func { // If you have an http request it needs to return a 
 }
 
 func requestDosuko() js.Func { // If you have an http request it needs to return a promise
+	//log.Println("in requestDosuko()")
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
 
 		handler := js.FuncOf(func(this js.Value, args []js.Value) any {

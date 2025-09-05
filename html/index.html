@@ -288,6 +288,19 @@
 
             function loadSudokuPuzzle(puzzleData) {
                 //console.log('Loading puzzle data:', puzzleData);
+
+                if (typeof puzzleData === 'string') {
+                    puzzleData = JSON.parse(puzzleData);
+                    if (typeof puzzleData !== 'object') {
+                        makeToast('Error: Invalid puzzle data format', 'failure');
+                        console.error('Puzzle data is a string, expected object:', puzzleData);
+                        return;
+                    }
+                }
+                if (puzzleData.board) {
+                    puzzleData = puzzleData.board;
+                }
+
                 currentPuzzleData = puzzleData;
                 // TODO call the golang code to get the hints.
                 drawSudokuGrid();
@@ -334,7 +347,7 @@
 
             window.next = () => {
                 let next = golang.next(JSON.stringify(currentPuzzleData));
-                loadSudokuPuzzle(JSON.parse(next));
+                loadSudokuPuzzle(next);
             }
 
             document.querySelector("#requestDosukoBtn").addEventListener("click", async () => {

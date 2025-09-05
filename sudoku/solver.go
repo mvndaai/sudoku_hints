@@ -112,7 +112,6 @@ func (g *Game) StepThrough(w gameWriter, sc scanner) {
 
 		f := fmt.Sprintf("Found single candidate at (x:%d, y:%d): %s\n", x, y, v)
 		lastUpdated = &Loc{X: x, Y: y}
-		g.SetLastFilled(x, y)
 		fmt.Fprint(w, f)
 		allChanges += f
 		g.Board[y][x].Cell.Set(v)

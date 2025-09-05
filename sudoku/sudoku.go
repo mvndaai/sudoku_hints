@@ -182,14 +182,14 @@ func (c *Cell) RemoveCandiates(vs []string) (removed []string) {
 	return removed
 }
 
-//func (g *Game) RemoveAllRecentCandidates() {
-//	for y := range g.Board {
-//		for x := range g.Board[y] {
-//			cell := g.Board[y][x].Cell
-//			cell.RecentCandidates = nil
-//		}
-//	}
-//}
+func (g *Game) RemoveAllRecentCandidates() {
+	for y := range g.Board {
+		for x := range g.Board[y] {
+			cell := g.Board[y][x].Cell
+			cell.RecentCandidates = nil
+		}
+	}
+}
 
 func (c *Cell) CandidateDiffs(vs []string) (removed []string) {
 	if c.Value != "" {
