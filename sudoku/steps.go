@@ -7,7 +7,7 @@ import (
 )
 
 func (g *Game) RemoveAllSimple(clearRecentCandidates bool) error {
-	log.Println("in RemoveAllSimple")
+	//log.Println("in RemoveAllSimple")
 	eliminator := EliminatorFilledCell
 	rows, cols, groups := g.GetSectionedCells()
 	partitions := []struct {
