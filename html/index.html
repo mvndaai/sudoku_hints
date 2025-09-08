@@ -255,34 +255,34 @@
                 const cellX = col * cellSize;
                 const cellY = row * cellSize;
 
+                // Map candidates and recentCandidates to objects with type, then combine and sort
+                const normalCandidates = (candidates || []).map(c => ({ value: c, isRecent: false }));
+                const recentCandidatesTyped = (recentCandidates || []).map(c => ({ value: c, isRecent: true }));
+                const combinedCandidates = [...normalCandidates, ...recentCandidatesTyped];
+                    //.sort((a, b) => a.value - b.value);
+
                 ctx.font = '10px Arial';
                 ctx.textAlign = 'center';
 
                 // Check if there's only one candidate
                 const isSingleCandidate = candidates.length === 1;
 
-                // Draw normal candidates
-                ctx.fillStyle = isSingleCandidate ? '#008000' : '#999'; // green if single, gray otherwise
-                for (let i = 0; i < candidates.length && i < 9; i++) {
+                // Draw all candidates
+                for (let i = 0; i < combinedCandidates.length && i < 9; i++) {
+                    const candidate = combinedCandidates[i];
                     const candidateRow = Math.floor(i / 3);
                     const candidateCol = i % 3;
                     const x = cellX + 8 + candidateCol * 11;
                     const y = cellY + 12 + candidateRow * 11;
-                    ctx.fillText(candidates[i], x, y);
-                }
-
-                // Draw recent candidates in a different color (overlay)
-                if (recentCandidates && recentCandidates.length > 0) {
-                    ctx.save();
-                    ctx.fillStyle = '#b20000'; // dark red
-                    for (let i = 0; i < recentCandidates.length && i < 9; i++) {
-                        const candidateRow = Math.floor(i / 3);
-                        const candidateCol = i % 3;
-                        const x = cellX + 8 + candidateCol * 11;
-                        const y = cellY + 12 + candidateRow * 11;
-                        ctx.fillText(recentCandidates[i], x, y);
+                    
+                    // Set color based on type
+                    if (candidate.isRecent) {
+                        ctx.fillStyle = '#b20000'; // dark red for recent
+                    } else {
+                        ctx.fillStyle = isSingleCandidate ? '#008000' : '#999'; // green if single, gray otherwise
                     }
-                    ctx.restore();
+                    
+                    ctx.fillText(candidate.value, x, y);
                 }
             }
 
