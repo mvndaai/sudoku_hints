@@ -18,11 +18,12 @@ func main() {
 	m["getKey"] = getKey()
 	m["random"] = getRandomBoard()
 	m["convertOCR"] = convertOCR()
+	m["loadBoard"] = loadBoard()
 	m["next"] = next()
 	m["processOCR"] = processOCR()
+	m["requestDosuko"] = requestDosuko()
 	m["currentGame"] = getCurrentGame()
 	m["setCell"] = setCell()
-	m["requestDosuko"] = requestDosuko()
 
 	js.Global().Set("golang", m)
 
@@ -86,6 +87,36 @@ func convertOCR() js.Func {
 		b, err := json.Marshal(currentGame)
 		if err != nil {
 			return err
+		}
+
+		return string(b)
+	})
+}
+
+func loadBoard() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		//log.Println("in loadBoard()")
+		if len(args) < 1 {
+			return "Missing board argument"
+		}
+
+		// Parse the JSON array into a 2D int array
+		var board [][]int
+		err := json.Unmarshal([]byte(args[0].String()), &board)
+		if err != nil {
+			return fmt.Sprintf("Error parsing board: %v", err)
+		}
+
+		g := sudoku.Game{}
+		err = g.FillBasic(board)
+		if err != nil {
+			return fmt.Sprintf("Error filling board: %v", err)
+		}
+		setCurrentGame(&g)
+
+		b, err := json.Marshal(currentGame)
+		if err != nil {
+			return fmt.Sprintf("Error marshaling game: %v", err)
 		}
 
 		return string(b)

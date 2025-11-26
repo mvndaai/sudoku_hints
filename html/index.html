@@ -43,12 +43,26 @@
         <canvas id="sudokuCanvas" width="450" height="450" style="border: 2px solid #333; background: white;" tabindex="0"></canvas>
 
         <div class="row" style="margin-top: 20px;">
+            <button id="userInput" style="margin: 10px; padding: 10px 20px; font-size: 16px;" popovertarget="manualInputModal">
+                ⌨ Input Manually
+            </button>
+            <dialog id="manualInputModal" popover style="padding: 20px; border: 2px solid #333; border-radius: 8px;">
+                <h2>Manual Input</h2>
+                <p>Enter your Sudoku puzzle manually:</p>
+                <div id="manualInputGrid" style="display: grid; grid-template-columns: repeat(9, 40px); gap: 1px; background: #333; border: 2px solid #333;">
+                </div>
+                <div style="margin-top: 10px;">
+                    <button onclick="document.getElementById('manualInputModal').hidePopover()" style="margin: 5px; padding: 8px 16px;">Cancel</button>
+                    <button onclick="loadManualPuzzle()" style="margin: 5px; padding: 8px 16px;">Load Puzzle</button>
+                </div>
+            </dialog>
+
             <button id="uploadBtn" style="margin: 10px; padding: 10px 20px; font-size: 16px;">
-            📷 Upload Image or Take Photo
+                📷 From Image
             </button>
 
             <button id="requestDosukoBtn" style="margin: 10px; padding: 10px 20px; font-size: 16px;">
-                🧩 Request Dosuko Puzzle
+                🧩 New Dosuko
             </button>
 
             <button onclick="next()" style="margin: 10px; padding: 10px 20px; font-size: 16px;">Next</button>
@@ -297,10 +311,11 @@
                         return;
                     }
                 }
+                //console.log("Puzzle data after parsing:", puzzleData);
                 if (puzzleData.board) {
                     puzzleData = puzzleData.board;
                 }
-
+                //console.log("Puzzle data after extracting board:", puzzleData);
                 currentPuzzleData = puzzleData;
                 // TODO call the golang code to get the hints.
                 drawSudokuGrid();
@@ -325,6 +340,7 @@
                         }
                     }
                 }
+                //console.log("Finished drawing puzzle");
             }
 
             // Initialize the grid
@@ -401,6 +417,104 @@
                     }
                 });
             }
+
+            function fillManualInputGrid() {
+                for (let i = 0; i < 81; i++) {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.inputMode = 'numeric';
+                    input.maxLength = 1;
+                    input.style.cssText = 'width: 40px; height: 40px; text-align: center; font-size: 18px; border: none; background: white;';
+                    input.dataset.index = i;
+
+                    // Add thicker borders for 3x3 boxes
+                    const row = Math.floor(i / 9);
+                    const col = i % 9;
+                    if (col % 3 === 0 && col !== 0) input.style.borderLeft = '2px solid #333';
+                    if (row % 3 === 0 && row !== 0) input.style.borderTop = '2px solid #333';
+
+                    input.addEventListener('input', (e) => {
+                        const value = e.target.value;
+                        // Only allow digits 0-9
+                        if (!/^[0-9]?$/.test(value)) {
+                            e.target.value = '';
+                            return;
+                        }
+                        if (!value) return;
+                        const nextIndex = parseInt(e.target.dataset.index) + 1;
+                        const nextInput = document.querySelector(`input[data-index="${nextIndex}"]`);
+                        nextInput?.focus();
+                    });
+
+                    input.addEventListener('keydown', (e) => {
+                        const currentIndex = parseInt(e.target.dataset.index);
+                        let targetIndex;
+                        if (e.key === 'ArrowRight') {
+                            e.preventDefault();
+                            targetIndex = currentIndex + 1;
+                            if (targetIndex < 81) {
+                                document.querySelector(`input[data-index="${targetIndex}"]`)?.focus();
+                            }
+                        } else if (e.key === 'ArrowLeft') {
+                            e.preventDefault();
+                            targetIndex = currentIndex - 1;
+                            if (targetIndex >= 0) {
+                                document.querySelector(`input[data-index="${targetIndex}"]`)?.focus();
+                            }
+                        } else if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            targetIndex = currentIndex + 9;
+                            if (targetIndex < 81) {
+                                document.querySelector(`input[data-index="${targetIndex}"]`)?.focus();
+                            }
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            targetIndex = currentIndex - 9;
+                            if (targetIndex >= 0) {
+                                document.querySelector(`input[data-index="${targetIndex}"]`)?.focus();
+                            }
+                        } else if (e.key === 'Backspace' && !e.target.value) {
+                            const prevIndex = currentIndex - 1;
+                            if (prevIndex >= 0) {
+                                document.querySelector(`input[data-index="${prevIndex}"]`)?.focus();
+                            }
+                        }
+                    });
+
+                    document.getElementById('manualInputGrid').appendChild(input);
+                }
+            }
+
+            function loadManualPuzzle() {
+                    const inputs = document.querySelectorAll('#manualInputGrid input');
+
+                    // Build 2D array for the Go backend
+                    const board = [];
+                    for (let i = 0; i < 9; i++) {
+                        const row = [];
+                        for (let j = 0; j < 9; j++) {
+                            const value = inputs[i * 9 + j].value;
+                            row.push(value ? parseInt(value) : 0);
+                        }
+                        board.push(row);
+                    }
+                    // Send to Go backend to initialize the game
+                    console.log("Loading manual puzzle:", board, JSON.stringify(board));
+                    const response = golang.loadBoard(JSON.stringify(board));
+
+                    try {
+                        loadSudokuPuzzle(JSON.parse(response));
+                    } catch (error) {
+                        makeToast('Error loading board: ' + error.message, 'failure');
+                        console.error('Error loading board:', error, 'Response:', response);
+                        return;
+                    }
+                    document.getElementById('manualInputModal').hidePopover();
+                    makeToast('Puzzle loaded successfully!', 'success');
+                }
+
+
+            fillManualInputGrid();
         </script>
 
         <style>#forkongithub a{background:#000;color:#fff;text-decoration:none;font-family:arial,sans-serif;text-align:center;font-weight:bold;padding:5px 40px;font-size:1rem;line-height:2rem;position:relative;transition:0.5s;}#forkongithub a:hover{background:#c11;color:#fff;}#forkongithub a::before,#forkongithub a::after{content:"";width:100%;display:block;position:absolute;top:1px;left:0;height:1px;background:#fff;}#forkongithub a::after{bottom:1px;top:auto;}@media screen and (min-width:1000px){#forkongithub{position:fixed;display:block;top:0;right:0;width:200px;overflow:hidden;height:200px;z-index:9999;}#forkongithub a{width:200px;position:absolute;top:60px;right:-60px;transform:rotate(45deg);-webkit-transform:rotate(45deg);-ms-transform:rotate(45deg);-moz-transform:rotate(45deg);-o-transform:rotate(45deg);box-shadow:4px 4px 10px rgba(0,0,0,0.8);}}</style>

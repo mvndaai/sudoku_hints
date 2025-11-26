@@ -144,7 +144,7 @@ func (g *Game) FillInts(cells [][]int, group map[Loc]int, symbols []string) erro
 			strCells[y][x] = strconv.Itoa(v)
 		}
 	}
-	return g.Fill(strCells, group, nil)
+	return g.Fill(strCells, group, symbols)
 }
 
 func (c *Cell) Set(v string) {
