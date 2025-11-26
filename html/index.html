@@ -61,6 +61,7 @@
         <canvas id="sudokuCanvas" tabindex="0"></canvas>
 
         <div class="row" style="margin-top: 20px;">
+            <button onclick="removeCandidate()">Remove Candidate</button>
             <button onclick="next()">Next</button>
             <button onclick="solve()">Solve</button>
         </div>
@@ -417,6 +418,24 @@
             window.next = () => {
                 let next = golang.next(JSON.stringify(currentPuzzleData));
                 loadSudokuPuzzle(next);
+            }
+
+            window.removeCandidate = () => {
+                const result = golang.removeCandidate();
+                if (typeof result === 'string' && (result.startsWith('Error') || result.startsWith('No'))) {
+                    makeToast(result, 'failure');
+                    return;
+                }
+                try {
+                    const parsed = JSON.parse(result);
+                    if (parsed.game && parsed.change) {
+                        loadSudokuPuzzle(parsed.game);
+                        makeToast(parsed.change);
+                    }
+                } catch (e) {
+                    // Fallback for backwards compatibility
+                    loadSudokuPuzzle(result);
+                }
             }
 
             window.solve = () => {

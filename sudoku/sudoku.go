@@ -2,7 +2,6 @@ package sudoku
 
 import (
 	"fmt"
-	"log"
 	"slices"
 	"strconv"
 )
@@ -178,9 +177,9 @@ func (c *Cell) RemoveCandiates(vs []string) (removed []string) {
 	//log.Println(c.Candidates)
 
 	if len(removed) != 0 {
-		log.Println("RemoveCandidates: removed candidates:", removed, "from cell, adding to RecentCandidates")
+		//log.Println("RemoveCandidates: removed candidates:", removed, "from cell, adding to RecentCandidates")
 		c.RecentCandidates = append(c.RecentCandidates, removed...)
-		log.Println("RecentCandidates is now:", c.RecentCandidates)
+		//log.Println("RecentCandidates is now:", c.RecentCandidates)
 	}
 	return removed
 }

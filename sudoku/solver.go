@@ -3,7 +3,6 @@ package sudoku
 import (
 	"fmt"
 	"io"
-	"log"
 
 	"github.com/fatih/color"
 )
@@ -73,7 +72,7 @@ type scanner interface {
 }
 
 func (g *Game) StepThrough(w gameWriter, sc scanner) {
-	log.Println("Starting StepThrough...", g.CellsWithRecentCandidates())
+	//log.Println("Starting StepThrough...", g.CellsWithRecentCandidates())
 	var lastUpdated *Loc
 	// Clear recent candidates from previous step
 	if g.RunSimpleAfter {
@@ -82,7 +81,7 @@ func (g *Game) StepThrough(w gameWriter, sc scanner) {
 	if g.RunSimpleFirst {
 		// Run simple eliminators first quietly
 		_ = g.RemoveAllSimple(false)
-		log.Println("After RunSimpleFirst RemoveAllSimple...", g.CellsWithRecentCandidates())
+		//log.Println("After RunSimpleFirst RemoveAllSimple...", g.CellsWithRecentCandidates())
 	}
 
 	fmt.Fprintln(w, g.String(lastUpdated))
@@ -146,12 +145,12 @@ func (g *Game) StepThrough(w gameWriter, sc scanner) {
 
 	// After setting a value, remove candidates from other cells in the same row/col/group
 	if g.RunSimpleAfter {
-		log.Println("Calling RemoveAllSimple after setting cell...", g.CellsWithRecentCandidates())
+		//log.Println("Calling RemoveAllSimple after setting cell...", g.CellsWithRecentCandidates())
 		err := g.RemoveAllSimple(false)
 		if err != nil {
-			log.Println("Error in RemoveAllSimple:", err)
+			//log.Println("Error in RemoveAllSimple:", err)
 		}
-		log.Println("RemoveAllSimple completed", g.CellsWithRecentCandidates())
+		//log.Println("RemoveAllSimple completed", g.CellsWithRecentCandidates())
 	}
-	log.Println("Finished StepThrough.", g.CellsWithRecentCandidates(), "==============================")
+	//log.Println("Finished StepThrough.", g.CellsWithRecentCandidates(), "==============================")
 }

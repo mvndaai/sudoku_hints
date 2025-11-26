@@ -20,6 +20,7 @@ func main() {
 	m["convertOCR"] = convertOCR()
 	m["loadBoard"] = loadBoard()
 	m["next"] = next()
+	m["removeCandidate"] = removeCandidate()
 	m["processOCR"] = processOCR()
 	m["requestDosuko"] = requestDosuko()
 	m["currentGame"] = getCurrentGame()
@@ -194,6 +195,37 @@ func next() js.Func {
 		}
 
 		return string(b)
+	})
+}
+
+func removeCandidate() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		currentGameMutex.Lock()
+		defer currentGameMutex.Unlock()
+		if currentGame == nil {
+			return "No current game"
+		}
+
+		ok, change, err := currentGame.RemoveOneCandidate(false)
+		if err != nil {
+			return fmt.Sprintf("Error removing candidate: %v", err)
+		}
+		if !ok {
+			return "No candidates to remove"
+		}
+
+		b, err := json.Marshal(currentGame)
+		if err != nil {
+			return fmt.Sprintf("Error marshaling game: %v", err)
+		}
+
+		// Return both the game state and the change message separated by a delimiter
+		result := map[string]string{
+			"game":   string(b),
+			"change": change,
+		}
+		resultJSON, _ := json.Marshal(result)
+		return string(resultJSON)
 	})
 }
 
