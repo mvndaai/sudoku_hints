@@ -3,6 +3,7 @@ package sudoku
 import (
 	"fmt"
 	"io"
+	"log"
 
 	"github.com/fatih/color"
 )
@@ -72,22 +73,16 @@ type scanner interface {
 }
 
 func (g *Game) StepThrough(w gameWriter, sc scanner) {
+	log.Println("Starting StepThrough...", g.CellsWithRecentCandidates())
 	var lastUpdated *Loc
+	// Clear recent candidates from previous step
+	if g.RunSimpleAfter {
+		g.RemoveAllRecentCandidates()
+	}
 	if g.RunSimpleFirst {
 		// Run simple eliminators first quietly
-		for {
-			change, err := g.EliminateCandidates(true)
-			if err != nil {
-				w.Flush()
-				fmt.Fprintln(w, g.String(lastUpdated))
-				fmt.Fprint(w, color.New(color.FgRed).Sprintf("\nError: %v\n", err))
-				//fmt.Fprint(writer, allChanges)
-				return
-			}
-			if change != "" {
-				break
-			}
-		}
+		_ = g.RemoveAllSimple(false)
+		log.Println("After RunSimpleFirst RemoveAllSimple...", g.CellsWithRecentCandidates())
 	}
 
 	fmt.Fprintln(w, g.String(lastUpdated))
@@ -134,7 +129,7 @@ func (g *Game) StepThrough(w gameWriter, sc scanner) {
 
 		if !solve {
 			if g.RunOnce {
-				return
+				break
 			}
 
 			fmt.Fprint(w, color.New(color.FgYellow).Sprint("Enter to continue "))
@@ -148,4 +143,15 @@ func (g *Game) StepThrough(w gameWriter, sc scanner) {
 		w.Flush()
 		fmt.Fprintln(w, g.String(lastUpdated))
 	}
+
+	// After setting a value, remove candidates from other cells in the same row/col/group
+	if g.RunSimpleAfter {
+		log.Println("Calling RemoveAllSimple after setting cell...", g.CellsWithRecentCandidates())
+		err := g.RemoveAllSimple(false)
+		if err != nil {
+			log.Println("Error in RemoveAllSimple:", err)
+		}
+		log.Println("RemoveAllSimple completed", g.CellsWithRecentCandidates())
+	}
+	log.Println("Finished StepThrough.", g.CellsWithRecentCandidates(), "==============================")
 }

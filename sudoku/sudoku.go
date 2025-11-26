@@ -2,6 +2,7 @@ package sudoku
 
 import (
 	"fmt"
+	"log"
 	"slices"
 	"strconv"
 )
@@ -43,6 +44,7 @@ type (
 		RandomEliminators bool // If true, the eliminators will be run in a random order
 		RunSimpleFirst    bool // If true, the simple eliminators will be run quietly first
 		RunOnce           bool // If true, breaks after finding one value
+		RunSimpleAfter    bool // If true, runs simple eliminators after other eliminators
 		AutoSolve         bool
 	}
 )
@@ -176,8 +178,9 @@ func (c *Cell) RemoveCandiates(vs []string) (removed []string) {
 	//log.Println(c.Candidates)
 
 	if len(removed) != 0 {
-		//log.Println(c, "removed candidates:", removed)
+		log.Println("RemoveCandidates: removed candidates:", removed, "from cell, adding to RecentCandidates")
 		c.RecentCandidates = append(c.RecentCandidates, removed...)
+		log.Println("RecentCandidates is now:", c.RecentCandidates)
 	}
 	return removed
 }
@@ -189,6 +192,20 @@ func (g *Game) RemoveAllRecentCandidates() {
 			cell.RecentCandidates = nil
 		}
 	}
+}
+
+// Used for debugging
+func (g *Game) CellsWithRecentCandidates() int {
+	count := 0
+	for y := range g.Board {
+		for x := range g.Board[y] {
+			cell := g.Board[y][x].Cell
+			if len(cell.RecentCandidates) > 0 {
+				count++
+			}
+		}
+	}
+	return count
 }
 
 func (c *Cell) CandidateDiffs(vs []string) (removed []string) {
