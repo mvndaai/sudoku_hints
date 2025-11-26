@@ -15,12 +15,21 @@
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
+                padding: 10px;
+                box-sizing: border-box;
+                margin: 0;
             }
             .row {
                 display: flex;
                 flex-direction: row;
                 justify-content: center;
                 align-items: center;
+                flex-wrap: wrap;
+                width: 100%;
+                max-width: 600px;
+            }
+            .row button {
+                margin: 5px;
             }
             .failure {
                 background: rgb(255, 100, 100);
@@ -34,16 +43,25 @@
                 left: 5px;
                 bottom: 5px;
             }
+            #sudokuCanvas {
+                max-width: calc(100vw - 20px);
+                max-height: calc(100vw - 20px);
+                width: 450px;
+                height: 450px;
+                border: 2px solid #333;
+                background: white;
+                display: block;
+            }
         </style>
     </head>
     <body>
         <h1>Sudoku Hints</h1>
         <p>Get hints for solving Sudoku puzzles.</p>
 
-        <canvas id="sudokuCanvas" width="450" height="450" style="border: 2px solid #333; background: white;" tabindex="0"></canvas>
+        <canvas id="sudokuCanvas" tabindex="0"></canvas>
 
         <div class="row" style="margin-top: 20px;">
-            <button id="userInput" style="margin: 10px; padding: 10px 20px; font-size: 16px;" popovertarget="manualInputModal">
+            <button id="userInput" popovertarget="manualInputModal">
                 ⌨ Input Manually
             </button>
             <dialog id="manualInputModal" popover style="padding: 20px; border: 2px solid #333; border-radius: 8px;">
@@ -57,15 +75,15 @@
                 </div>
             </dialog>
 
-            <button id="uploadBtn" style="margin: 10px; padding: 10px 20px; font-size: 16px;">
+            <button id="uploadBtn">
                 📷 From Image
             </button>
 
-            <button id="requestDosukoBtn" style="margin: 10px; padding: 10px 20px; font-size: 16px;">
+            <button id="requestDosukoBtn">
                 🧩 New Dosuko
             </button>
 
-            <button onclick="next()" style="margin: 10px; padding: 10px 20px; font-size: 16px;">Next</button>
+            <button onclick="next()">Next</button>
             <!--<input type="file" id="imageInput" accept="image/*" capture="environment" style="display: none;">-->
             <input type="file" id="imageInput" accept="image/*;capture=camera" style="display: none;">
         </div>
@@ -102,7 +120,24 @@
             let selectedCell = null;
             let currentPuzzleData = null; // Initialize as null, will be set when examplePuzzle is available
             const ctx = canvas.getContext('2d');
-            const cellSize = 50;
+            
+            // Make canvas responsive
+            function resizeCanvas() {
+                const maxSize = Math.min(450, window.innerWidth - 20);
+                canvas.width = maxSize;
+                canvas.height = maxSize;
+                if (currentPuzzleData) {
+                    redrawPuzzle();
+                } else {
+                    drawSudokuGrid();
+                }
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            function getCellSize() {
+                return canvas.width / 9;
+            }
 
             // Add click event listener to canvas
             canvas.addEventListener('click', function(event) {
@@ -110,6 +145,7 @@
                 const x = event.clientX - rect.left;
                 const y = event.clientY - rect.top;
 
+                const cellSize = getCellSize();
                 const col = Math.floor(x / cellSize);
                 const row = Math.floor(y / cellSize);
 
@@ -199,6 +235,7 @@
 
             function drawSelectedCell() {
             if (!selectedCell) return;
+                const cellSize = getCellSize();
                 const x = selectedCell.col * cellSize;
                 const y = selectedCell.row * cellSize;
 
@@ -230,6 +267,7 @@
             function drawSudokuGrid() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+                const cellSize = getCellSize();
                 // Draw grid lines
                 ctx.strokeStyle = '#000';
                 for (let i = 0; i <= 9; i++) {
@@ -247,6 +285,7 @@
 
             function drawCellBackground(row, col, isPreFilled) {
                 if (isPreFilled) {
+                    const cellSize = getCellSize();
                     const x = col * cellSize;
                     const y = row * cellSize;
                     ctx.fillStyle = '#f0f0f0';
@@ -255,17 +294,20 @@
             }
 
             function drawNumber(row, col, number) {
+                const cellSize = getCellSize();
                 const x = col * cellSize + cellSize / 2;
                 const y = row * cellSize + cellSize / 2;
 
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.font = '24px Arial';
+                const fontSize = Math.floor(cellSize * 0.48);
+                ctx.font = `${fontSize}px Arial`;
                 ctx.fillStyle = '#000';
                 ctx.fillText(number, x, y);
             }
 
             function drawCandidates(row, col, candidates, recentCandidates) {
+                const cellSize = getCellSize();
                 const cellX = col * cellSize;
                 const cellY = row * cellSize;
 
@@ -275,19 +317,22 @@
                 const combinedCandidates = [...normalCandidates, ...recentCandidatesTyped];
                     //.sort((a, b) => a.value - b.value);
 
-                ctx.font = '10px Arial';
+                const fontSize = Math.floor(cellSize * 0.2);
+                ctx.font = `${fontSize}px Arial`;
                 ctx.textAlign = 'center';
 
                 // Check if there's only one candidate
                 const isSingleCandidate = candidates.length === 1;
 
                 // Draw all candidates
+                const spacing = cellSize / 3;
+                const offset = cellSize * 0.16;
                 for (let i = 0; i < combinedCandidates.length && i < 9; i++) {
                     const candidate = combinedCandidates[i];
                     const candidateRow = Math.floor(i / 3);
                     const candidateCol = i % 3;
-                    const x = cellX + 8 + candidateCol * 11;
-                    const y = cellY + 12 + candidateRow * 11;
+                    const x = cellX + offset + candidateCol * spacing;
+                    const y = cellY + offset + fontSize * 0.35 + candidateRow * spacing;
                     
                     // Set color based on type
                     if (candidate.isRecent) {
