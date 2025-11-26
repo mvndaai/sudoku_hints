@@ -61,6 +61,10 @@
         <canvas id="sudokuCanvas" tabindex="0"></canvas>
 
         <div class="row" style="margin-top: 20px;">
+            <button onclick="next()">Next</button>
+        </div>
+
+        <div class="row" style="margin: 20px 0;">
             <button id="userInput" popovertarget="manualInputModal">
                 ⌨ Input Manually
             </button>
@@ -87,7 +91,6 @@
                 ❓ Random
             </button>
 
-            <button onclick="next()">Next</button>
             <!--<input type="file" id="imageInput" accept="image/*" capture="environment" style="display: none;">-->
             <input type="file" id="imageInput" accept="image/*;capture=camera" style="display: none;">
         </div>
