@@ -83,6 +83,10 @@
                 🧩 New Dosuko
             </button>
 
+            <button id="randomBtn">
+                ❓ Random
+            </button>
+
             <button onclick="next()">Next</button>
             <!--<input type="file" id="imageInput" accept="image/*" capture="environment" style="display: none;">-->
             <input type="file" id="imageInput" accept="image/*;capture=camera" style="display: none;">
@@ -416,6 +420,17 @@
                 let puzzle = JSON.parse(await golang.requestDosuko());
                 makeToast(`Loaded Dosuko puzzle (Difficulty: ${puzzle.difficulty})`, "success");
                 loadSudokuPuzzle(puzzle.board);
+            });
+
+            document.querySelector("#randomBtn").addEventListener("click", async () => {
+                const puzzle = JSON.parse(golang.random());
+                loadSudokuPuzzle(puzzle);
+
+                if (puzzle.difficulty){
+                    makeToast(`Loaded random puzzle (Difficulty: ${puzzle.difficulty})`, "success");
+                } else {
+                    makeToast(`Loaded random puzzle`, "success");
+                }
             });
 
             // https://mdn.github.io/dom-examples/popover-api/toast-popovers/
