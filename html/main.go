@@ -173,6 +173,19 @@ func setCell() js.Func {
 
 func next() js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		if len(args) > 1 {
+			opts := struct {
+				AutoSolve bool `json:"autoSolve"`
+			}{}
+			err := json.Unmarshal([]byte(args[1].String()), &opts)
+			if err != nil {
+				return fmt.Errorf("invalid options: %w", err)
+			}
+			if opts.AutoSolve {
+				currentGame.AutoSolve = true
+			}
+		}
+
 		currentGame.StepThroughJavascript(nil)
 
 		b, err := json.Marshal(currentGame)

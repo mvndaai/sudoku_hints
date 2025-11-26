@@ -62,6 +62,7 @@
 
         <div class="row" style="margin-top: 20px;">
             <button onclick="next()">Next</button>
+            <button onclick="solve()">Solve</button>
         </div>
 
         <div class="row" style="margin: 20px 0;">
@@ -416,6 +417,11 @@
             window.next = () => {
                 let next = golang.next(JSON.stringify(currentPuzzleData));
                 loadSudokuPuzzle(next);
+            }
+
+            window.solve = () => {
+                let solve = golang.next(JSON.stringify(currentPuzzleData), JSON.stringify({autoSolve: true}));
+                loadSudokuPuzzle(solve);
             }
 
             document.querySelector("#requestDosukoBtn").addEventListener("click", async () => {
