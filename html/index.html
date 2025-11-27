@@ -70,7 +70,7 @@
             <button id="userInput" popovertarget="manualInputModal">
                 ⌨ Input Manually
             </button>
-            <dialog id="manualInputModal" popover style="padding: 20px; border: 2px solid #333; border-radius: 8px;">
+            <dialog id="manualInputModal" popover style="padding: 20px; border: 2px solid #333; border-radius: 8px; top: 5px; left: 5px; bottom: auto;">
                 <h2>Manual Input</h2>
                 <p>Enter your Sudoku puzzle manually:</p>
                 <div id="manualInputGrid" style="display: grid; grid-template-columns: repeat(9, 40px); gap: 1px; background: #333; border: 2px solid #333;">
@@ -148,7 +148,7 @@
             let selectedCell = null;
             let currentPuzzleData = null; // Initialize as null, will be set when examplePuzzle is available
             const ctx = canvas.getContext('2d');
-            
+
             // Make canvas responsive
             function resizeCanvas() {
                 const maxSize = Math.min(450, window.innerWidth - 20);
@@ -162,7 +162,7 @@
             }
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
-            
+
             function getCellSize() {
                 return canvas.width / 9;
             }
@@ -361,14 +361,14 @@
                     const candidateCol = i % 3;
                     const x = cellX + offset + candidateCol * spacing;
                     const y = cellY + offset + fontSize * 0.35 + candidateRow * spacing;
-                    
+
                     // Set color based on type
                     if (candidate.isRecent) {
                         ctx.fillStyle = '#b20000'; // dark red for recent
                     } else {
                         ctx.fillStyle = isSingleCandidate ? '#008000' : '#999'; // green if single, gray otherwise
                     }
-                    
+
                     ctx.fillText(candidate.value, x, y);
                 }
             }
@@ -482,26 +482,45 @@
 
             // https://mdn.github.io/dom-examples/popover-api/toast-popovers/
             const toastHistory = [];
-            
             function makeToast(msg, type) {
                 // Store in history
                 const timestamp = new Date().toLocaleTimeString();
                 toastHistory.push({ msg, type: type || 'none', timestamp });
-                
+
                 // Update history display if dialog is open
                 if (document.getElementById('historyModal').open) {
                     filterHistory();
                 }
-                
+
                 // Create an element and make it into a popover
                 const popover = document.createElement("article");
                 popover.popover = "manual";
                 popover.classList.add("toast");
                 popover.classList.add("newest");
                 popover.classList.add(type);
+                popover.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 10px 15px; transition: bottom 0.3s ease;';
 
-                // Give the toast its text content, and add it to the DOM
-                popover.textContent = msg;
+                // Add close button
+                const closeBtn = document.createElement('button');
+                closeBtn.innerHTML = '×';
+                closeBtn.style.cssText = 'background: none; border: none; font-size: 24px; cursor: pointer; color: inherit; padding: 0; width: 20px; height: 20px; line-height: 20px; flex-shrink: 0; opacity: 0.7;';
+                closeBtn.title = 'Close';
+                closeBtn.onmouseover = () => closeBtn.style.opacity = '1';
+                closeBtn.onmouseout = () => closeBtn.style.opacity = '0.7';
+                closeBtn.onclick = () => {
+                    const currentBottom = parseInt(popover.style.bottom.replace("px", "")) || 5;
+                    popover.hidePopover();
+                    popover.remove();
+                    repositionToastsAfterClose(currentBottom);
+                };
+
+                // Add message text
+                const messageSpan = document.createElement('span');
+                messageSpan.textContent = msg;
+                messageSpan.style.flex = '1';
+
+                popover.appendChild(closeBtn);
+                popover.appendChild(messageSpan);
                 document.body.appendChild(popover);
 
                 // Show the popover
@@ -517,6 +536,16 @@
                 popover.addEventListener("toggle", (event) => {
                     if (event.newState === "open") {
                         moveToastsUp();
+                    }
+                });
+            }
+            function repositionToastsAfterClose(closedBottom) {
+                const toasts = document.querySelectorAll(".toast");
+                toasts.forEach((toast) => {
+                    const toastBottom = parseInt(toast.style.bottom.replace("px", "")) || 5;
+                    // Only move toasts that were above the closed one
+                    if (toastBottom > closedBottom) {
+                        toast.style.bottom = `${toastBottom - 50}px`;
                     }
                 });
             }
@@ -633,20 +662,20 @@
 
 
             fillManualInputGrid();
-            
+
             function filterHistory() {
                 const showSuccess = document.getElementById('filterSuccess').checked;
                 const showFailure = document.getElementById('filterFailure').checked;
                 const showNone = document.getElementById('filterNone').checked;
-                
+
                 const historyList = document.getElementById('historyList');
                 historyList.innerHTML = '';
-                
+
                 if (toastHistory.length === 0) {
                     historyList.innerHTML = '<p style="color: #999; text-align: center;">No history yet</p>';
                     return;
                 }
-                
+
                 const filteredHistory = toastHistory.filter(item => {
                     if (item.type === 'success' && showSuccess) return true;
                     if (item.type === 'failure' && showFailure) return true;
@@ -654,16 +683,16 @@
                     if (!item.type && showNone) return true;
                     return false;
                 });
-                
+
                 if (filteredHistory.length === 0) {
                     historyList.innerHTML = '<p style="color: #999; text-align: center;">No items match filter</p>';
                     return;
                 }
-                
+
                 filteredHistory.reverse().forEach((item, index) => {
                     const div = document.createElement('div');
                     div.style.cssText = 'padding: 8px; margin: 5px 0; border-radius: 4px; border-left: 4px solid; position: relative; padding-right: 30px;';
-                    
+
                     if (item.type === 'success') {
                         div.style.borderColor = '#33c933';
                         div.style.backgroundColor = '#e8f5e9';
@@ -674,7 +703,7 @@
                         div.style.borderColor = '#999';
                         div.style.backgroundColor = '#f5f5f5';
                     }
-                    
+
                     // Add delete button
                     const deleteBtn = document.createElement('button');
                     deleteBtn.innerHTML = '×';
@@ -687,20 +716,20 @@
                         toastHistory.splice(originalIndex, 1);
                         filterHistory();
                     };
-                    
+
                     div.innerHTML = `<span style="font-size: 0.85em; color: #666;">[${item.timestamp}]</span> ${item.msg}`;
                     div.appendChild(deleteBtn);
                     historyList.appendChild(div);
                 });
             }
-            
+
             function clearHistory() {
                 if (confirm('Are you sure you want to clear the history?')) {
                     toastHistory.length = 0;
                     filterHistory();
                 }
             }
-            
+
             // Update history display when dialog opens
             const historyModal = document.getElementById('historyModal');
             historyModal.addEventListener('click', (e) => {
@@ -708,7 +737,7 @@
                     // Clicking the backdrop, do nothing or could close it
                 }
             });
-            
+
             // Update history when dialog opens
             new MutationObserver(() => {
                 if (historyModal.open) {
