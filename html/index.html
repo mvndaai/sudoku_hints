@@ -536,8 +536,32 @@
                 popover.addEventListener("toggle", (event) => {
                     if (event.newState === "open") {
                         moveToastsUp();
+                        limitToastsOnMobile();
                     }
                 });
+            }
+            function limitToastsOnMobile() {
+                // Check if we're on mobile (screen width <= 768px)
+                if (window.innerWidth <= 768) {
+                    const toasts = Array.from(document.querySelectorAll(".toast"));
+                    const maxToasts = 4;
+
+                    // If we have more than maxToasts, remove the oldest ones (highest bottom values)
+                    if (toasts.length > maxToasts) {
+                        // Sort by bottom position (descending) to get oldest (topmost) toasts first
+                        toasts.sort((a, b) => {
+                            const aBottom = parseInt(a.style.bottom.replace("px", "")) || 0;
+                            const bBottom = parseInt(b.style.bottom.replace("px", "")) || 0;
+                            return bBottom - aBottom;
+                        });
+
+                        // Remove excess toasts
+                        for (let i = maxToasts; i < toasts.length; i++) {
+                            toasts[i].hidePopover();
+                            toasts[i].remove();
+                        }
+                    }
+                }
             }
             function repositionToastsAfterClose(closedBottom) {
                 const toasts = document.querySelectorAll(".toast");
