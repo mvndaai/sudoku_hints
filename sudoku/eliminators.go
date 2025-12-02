@@ -361,3 +361,122 @@ func getCombinations(cells []LocCell, size int) [][]LocCell {
 
 	return result
 }
+
+// EliminatorFistemafelRing enforces that certain groups must contain the same set of values
+// This is used for variant Sudoku where groups are "disjoint" - they must have matching values
+// https://www.tiktok.com/@brainfueltips/video/7565584522092268813
+var EliminatorFistemafelRing = CandidateEliminator{
+	Name:        "Fistemafel Ring",
+	Description: "The 16 digits that ring the center much match the corners.",
+	GameEliminator: func(g *Game) (string, error) {
+		// Define the specific cells for each matching group by their coordinates
+		matchingGroups := []struct {
+			name string
+			locs []Loc
+		}{
+			{
+				name: "corners",
+				locs: []Loc{
+					{X: 0, Y: 0}, {X: 1, Y: 0}, {X: 7, Y: 0}, {X: 8, Y: 0},
+					{X: 0, Y: 1}, {X: 1, Y: 1}, {X: 7, Y: 1}, {X: 8, Y: 1},
+					{X: 0, Y: 7}, {X: 1, Y: 7}, {X: 7, Y: 7}, {X: 8, Y: 7},
+					{X: 0, Y: 8}, {X: 1, Y: 8}, {X: 7, Y: 8}, {X: 8, Y: 8},
+				},
+			},
+			{
+				name: "ring",
+				locs: []Loc{
+					{X: 2, Y: 2}, {X: 3, Y: 2}, {X: 4, Y: 2}, {X: 5, Y: 2}, {X: 6, Y: 2},
+					{X: 2, Y: 3}, {X: 6, Y: 3},
+					{X: 2, Y: 4}, {X: 6, Y: 4},
+					{X: 2, Y: 5}, {X: 6, Y: 5},
+					{X: 2, Y: 6}, {X: 3, Y: 6}, {X: 4, Y: 6}, {X: 5, Y: 6}, {X: 6, Y: 6},
+				},
+			},
+		}
+
+		// Collect cells for each group
+		groupCells := make([][]LocCell, len(matchingGroups))
+		for i, group := range matchingGroups {
+			groupCells[i] = make([]LocCell, 0, len(group.locs))
+			for _, loc := range group.locs {
+				if loc.Y < len(g.Board) && loc.X < len(g.Board[loc.Y]) {
+					groupCells[i] = append(groupCells[i], LocCell{
+						Loc:  loc,
+						Cell: g.Board[loc.Y][loc.X].Cell,
+					})
+				}
+			}
+		}
+
+		// Check which groups are complete
+		groupValues := make([]map[string]bool, len(groupCells))
+		groupComplete := make([]bool, len(groupCells))
+
+		for i, cells := range groupCells {
+			groupValues[i] = make(map[string]bool)
+			filledCount := 0
+
+			for _, cell := range cells {
+				if cell.Cell.Value != "" {
+					groupValues[i][cell.Cell.Value] = true
+					filledCount++
+				}
+			}
+
+			groupComplete[i] = (filledCount == len(cells))
+		}
+
+		// If exactly one group is complete, remove candidates from other groups that aren't in the complete group's values
+		completeGroupIdx := -1
+		completeCount := 0
+
+		for i, complete := range groupComplete {
+			if complete {
+				completeGroupIdx = i
+				completeCount++
+			}
+		}
+
+		if completeCount != 1 {
+			return "", nil
+		}
+
+		// One group is complete - enforce its values on other groups
+		completeValues := groupValues[completeGroupIdx]
+		completeGroupName := matchingGroups[completeGroupIdx].name
+
+		for i, cells := range groupCells {
+			if i == completeGroupIdx {
+				continue // Skip the complete group
+			}
+
+			groupName := matchingGroups[i].name
+
+			// Remove candidates that are not in the complete group's values
+			for _, cell := range cells {
+				if cell.Cell.Value != "" {
+					continue
+				}
+
+				toRemove := []string{}
+				for _, candidate := range cell.Cell.Candidates {
+					if !completeValues[candidate] {
+						toRemove = append(toRemove, candidate)
+					}
+				}
+
+				if len(toRemove) == 0 {
+					continue
+				}
+
+				removed := cell.Cell.RemoveCandiates(toRemove)
+				if len(removed) > 0 {
+					return fmt.Sprintf("removed %v from %s cell at (%d,%d) because %s is complete without these values", removed, groupName, cell.Loc.X, cell.Loc.Y, completeGroupName), nil
+				}
+			}
+		}
+
+		return "", nil
+	},
+}

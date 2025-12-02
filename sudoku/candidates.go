@@ -29,8 +29,9 @@ type CandidateEliminator struct {
 var Eliminators = []CandidateEliminator{
 	EliminatorFilledCell,
 	EliminatorUniqueCandidate,
-	EliminatorCandidateChains,
+	EliminatorFistemafelRing,
 	EliminatorGroupAndRowColumn,
+	EliminatorCandidateChains,
 }
 
 func (g *Game) GetSectionedCells() (rows [][]LocCell, cols [][]LocCell, groups [][]LocCell) {

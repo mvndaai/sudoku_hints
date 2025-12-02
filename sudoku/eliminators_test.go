@@ -238,3 +238,71 @@ func TestEliminatorGroupAndRowColumn(t *testing.T) {
 	}
 
 }
+
+func TestEliminatorFistemafelRing(t *testing.T) {
+	tests := []struct {
+		name     string
+		setup    func() *Game
+		expected []string
+	}{
+		{
+			name: "One group complete removes candidates from other",
+			setup: func() *Game {
+				g := &Game{}
+				g.Symbols = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}
+
+				// Create a board with corner group (0) complete with all 16 cells filled with unique values 1-8 (two of each)
+				// and ring group (1) with 9 as a candidate that should be removed
+				g.Board = [][]GroupedCell{
+					{{Cell: &Cell{Value: "1", IsPreFilled: true}, group: 0}, {Cell: &Cell{Value: "2", IsPreFilled: true}, group: 0}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "3", IsPreFilled: true}, group: 0}, {Cell: &Cell{Value: "4", IsPreFilled: true}, group: 0}},
+					{{Cell: &Cell{Value: "5", IsPreFilled: true}, group: 0}, {Cell: &Cell{Value: "6", IsPreFilled: true}, group: 0}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "7", IsPreFilled: true}, group: 0}, {Cell: &Cell{Value: "8", IsPreFilled: true}, group: 0}},
+					{{Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}},
+					{{Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}},
+					{{Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}},
+					{{Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}},
+					{{Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 1}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}},
+					{{Cell: &Cell{Value: "1", IsPreFilled: true}, group: 0}, {Cell: &Cell{Value: "2", IsPreFilled: true}, group: 0}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "3", IsPreFilled: true}, group: 0}, {Cell: &Cell{Value: "4", IsPreFilled: true}, group: 0}},
+					{{Cell: &Cell{Value: "5", IsPreFilled: true}, group: 0}, {Cell: &Cell{Value: "6", IsPreFilled: true}, group: 0}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "", Candidates: []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}}, group: 2}, {Cell: &Cell{Value: "7", IsPreFilled: true}, group: 0}, {Cell: &Cell{Value: "8", IsPreFilled: true}, group: 0}},
+				}
+				return g
+			},
+			expected: []string{
+				"removed [9] from ring cell at (2,2) because corners is complete without these values",
+				"removed [9] from ring cell at (3,2) because corners is complete without these values",
+				"removed [9] from ring cell at (4,2) because corners is complete without these values",
+				"removed [9] from ring cell at (5,2) because corners is complete without these values",
+				"removed [9] from ring cell at (6,2) because corners is complete without these values",
+				"removed [9] from ring cell at (2,3) because corners is complete without these values",
+				"removed [9] from ring cell at (6,3) because corners is complete without these values",
+				"removed [9] from ring cell at (2,4) because corners is complete without these values",
+				"removed [9] from ring cell at (6,4) because corners is complete without these values",
+				"removed [9] from ring cell at (2,5) because corners is complete without these values",
+				"removed [9] from ring cell at (6,5) because corners is complete without these values",
+				"removed [9] from ring cell at (2,6) because corners is complete without these values",
+				"removed [9] from ring cell at (3,6) because corners is complete without these values",
+				"removed [9] from ring cell at (4,6) because corners is complete without these values",
+				"removed [9] from ring cell at (5,6) because corners is complete without these values",
+				"removed [9] from ring cell at (6,6) because corners is complete without these values",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := tt.setup()
+
+			foundChanges := []string{}
+			for {
+				change, err := EliminatorFistemafelRing.GameEliminator(g)
+				require.NoError(t, err)
+				if change == "" {
+					break
+				}
+				foundChanges = append(foundChanges, change)
+				t.Log(change)
+			}
+
+			assert.ElementsMatch(t, tt.expected, foundChanges)
+		})
+	}
+}
